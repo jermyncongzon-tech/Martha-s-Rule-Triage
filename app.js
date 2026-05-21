@@ -930,7 +930,9 @@ function isVisitLogStepComplete(stepId) {
     return visit.recategoriseCall === "no" || (visit.recategoriseCall === "yes" && triageCategoryIsComplete(visit.callCategory));
   }
   if (stepId === "learningNotifications") {
-    return true;
+    const learningComplete = visit.actionsOutcomes.learningIdentified === "no" ||
+      Boolean(visit.actionsOutcomes.learningIdentified && visit.actionsOutcomes.learningTheme);
+    return Boolean(learningComplete);
   }
   if (stepId === "visitLogActions") {
     return isVisitLogStepComplete("clinicalAssessment") &&
@@ -990,7 +992,14 @@ function renderVisitLogLearningNotificationsSection() {
     <section class="visit-log-section">
       <h3>Learning and Notifications</h3>
       <div class="field-grid">
-        <div class="field-note">No additional learning or notification fields are required for this version.</div>
+        ${radioGroup("Learning identified?", "visitLog.actionsOutcomes.learningIdentified", [["yes", "Yes"], ["no", "No"], ["pending", "Pending"]])}
+        ${state.visitLog.actionsOutcomes.learningIdentified && state.visitLog.actionsOutcomes.learningIdentified !== "no" ? `
+          ${selectField("Learning theme", "visitLog.actionsOutcomes.learningTheme", learningThemeOptions, "Select learning theme")}
+          ${textarea("Feedback / learning notes", "visitLog.actionsOutcomes.feedbackLearningNotes")}
+        ` : ""}
+        <div class="field-note">
+          By default, this call visit log will be sent to managers and matrons.
+        </div>
       </div>
     </section>
   `;
@@ -1030,7 +1039,9 @@ function renderVisitLogReviewSection() {
             ] : []),
           ])}
           ${renderVisitReviewCard("4", "Learning and Notifications", [
-            ["Status", "No additional fields required"],
+            ["Learning identified", learningStatusLabel()],
+            ["Learning theme", visit.actionsOutcomes.learningTheme],
+            ["Feedback / learning notes", visit.actionsOutcomes.feedbackLearningNotes],
           ])}
         </div>
         <div class="route-actions">
