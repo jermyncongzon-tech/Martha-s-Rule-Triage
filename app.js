@@ -733,12 +733,14 @@ function renderStartView() {
     <main class="start-view" aria-labelledby="start-title">
       <div class="start-shell">
         <header class="start-header">
+          <div class="start-theme-row">
+            <button class="theme-toggle-button theme-toggle-compact" type="button" data-action="toggle-theme">${darkModeEnabled ? "Light" : "Dark"}</button>
+          </div>
           <div>
             <p class="start-app-title">Martha's Rule Call Triage and Visit Log</p>
             ${renderVersionControl("start")}
           </div>
           <div class="start-header-actions">
-            <button class="theme-toggle-button" type="button" data-action="toggle-theme">${darkModeEnabled ? "Light mode" : "Dark mode"}</button>
             <img class="start-logo" src="assets/UCLH logo colour 2.jpg" alt="UCLH" />
           </div>
         </header>
@@ -785,6 +787,9 @@ function renderProcessPosterModal() {
 function renderHeader() {
   return `
     <header class="app-header">
+      <div class="header-theme-row">
+        <button class="theme-toggle-button theme-toggle-compact" type="button" data-action="toggle-theme">${darkModeEnabled ? "Light" : "Dark"}</button>
+      </div>
       <div class="app-title-block">
         <h1>Martha's Rule Call Triage and Visit Log</h1>
         ${renderVersionControl("app")}
@@ -793,7 +798,6 @@ function renderHeader() {
         ${renderProgress()}
       </div>
       <div class="header-actions">
-        <button class="theme-toggle-button" type="button" data-action="toggle-theme">${darkModeEnabled ? "Light mode" : "Dark mode"}</button>
         <img class="uclh-logo" src="assets/UCLH logo colour 2.jpg" alt="UCLH" />
       </div>
     </header>

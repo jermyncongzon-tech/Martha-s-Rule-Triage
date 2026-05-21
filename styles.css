@@ -76,6 +76,7 @@ body {
   margin-bottom: 34px;
   min-height: 132px;
   padding: 24px;
+  position: relative;
 }
 
 .start-logo {
@@ -94,6 +95,13 @@ body {
   display: flex;
   flex: 0 0 auto;
   gap: 12px;
+}
+
+.start-theme-row {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  z-index: 2;
 }
 
 .start-app-title {
@@ -346,6 +354,7 @@ select {
   margin-bottom: 18px;
   min-height: 112px;
   padding: 18px 20px;
+  position: relative;
 }
 
 .app-header h1 {
@@ -401,6 +410,13 @@ select {
   min-width: 0;
 }
 
+.header-theme-row {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  z-index: 2;
+}
+
 .header-progress {
   min-width: 0;
   width: 100%;
@@ -454,6 +470,14 @@ select {
   text-align: center;
   transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
   white-space: nowrap;
+}
+
+.theme-toggle-button.theme-toggle-compact {
+  font-size: 0.72rem;
+  font-weight: 900;
+  min-height: 26px;
+  min-width: 0;
+  padding: 4px 8px;
 }
 
 .theme-toggle-button:hover {
@@ -3407,6 +3431,11 @@ textarea:focus {
     padding: 16px;
   }
 
+  .header-theme-row {
+    right: 8px;
+    top: 7px;
+  }
+
   .app-header h1 {
     font-size: 1.35rem;
   }
@@ -3444,6 +3473,12 @@ textarea:focus {
   .start-header {
     align-items: flex-start;
     display: grid;
+    padding-top: 28px;
+  }
+
+  .start-theme-row {
+    right: 8px;
+    top: 7px;
   }
 
   .start-logo {
