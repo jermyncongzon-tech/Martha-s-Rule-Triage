@@ -3732,6 +3732,12 @@ function loadState() {
   }
 }
 
+function clearSavedAppDataOnRefresh() {
+  // Safety mode: always start with a fresh in-memory form state after page refresh.
+  localStorage.removeItem(STORAGE_KEY);
+  state = clone(defaultState);
+}
+
 function getCaseCodeFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return normalizeCaseCode(params.get(VISIT_LOG_CASE_CODE_QUERY_PARAM));
@@ -4435,7 +4441,7 @@ app.addEventListener("keydown", (event) => {
   }
 });
 
-loadState();
+clearSavedAppDataOnRefresh();
 loadThemePreference();
 applyUrlPrefill();
 loadWardContactDirectory().finally(renderApp);

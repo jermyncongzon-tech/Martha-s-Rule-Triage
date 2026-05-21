@@ -3,8 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Martha's Rule Call Triage</title>
-  <link rel="stylesheet" href="styles.css?v=20260521-0002" />
 </head>
 <body>
   <main id="app">
@@ -17,6 +19,19 @@
       </article>
     </section>
   </main>
-  <script defer src="app.js?v=20260521-0002"></script>
+  <script>
+    (function loadFreshAssets() {
+      const token = Date.now().toString();
+      const css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "styles.css?v=" + encodeURIComponent(token);
+      document.head.appendChild(css);
+
+      const js = document.createElement("script");
+      js.defer = true;
+      js.src = "app.js?v=" + encodeURIComponent(token);
+      document.body.appendChild(js);
+    }());
+  </script>
 </body>
 </html>
