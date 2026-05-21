@@ -191,9 +191,6 @@ let otherWardEmailModalOpen = false;
 let otherWardEmailOpenFormAfterSave = false;
 let noticeRecipientModalOpen = false;
 let pendingNoticeRecipientScrollTop = null;
-let noticeDispatchAnimationVisible = false;
-let noticeDispatchAnimationTimeout = null;
-let noticeRecipientRevealTimeout = null;
 let handoverWindowPosition = { x: null, y: null };
 let handoverDragState = null;
 let handoverWindowMinimized = false;
@@ -718,7 +715,6 @@ function renderApp() {
       ${renderWardContactModal()}
       ${renderOtherWardEmailModal()}
       ${renderNoticeRecipientModal()}
-      ${renderNoticeDispatchAnimation()}
       ${renderVisitLogHandoverBanner()}
     </div>
   `;
@@ -1556,63 +1552,6 @@ function renderNoticeRecipientModal() {
       </section>
     </div>
   `;
-}
-
-function renderNoticeDispatchAnimation() {
-  if (!noticeDispatchAnimationVisible) return "";
-  return `
-    <div class="notice-send-overlay" aria-hidden="true">
-      <div class="notice-send-stage">
-        <div class="notice-lane"></div>
-        <div class="notice-core">
-          <div class="notice-paper"></div>
-          <div class="notice-envelope">
-            <div class="envelope-body"></div>
-            <div class="envelope-flap"></div>
-          </div>
-        </div>
-        <div class="notice-carrier">
-          <div class="carrier-envelope"></div>
-          <div class="carrier-trail"></div>
-        </div>
-        <div class="notice-flight local">
-          <div class="flight-envelope"></div>
-          <span>Local Teams</span>
-        </div>
-        <div class="notice-flight perrt">
-          <div class="flight-envelope"></div>
-          <span>PERRT</span>
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function playNoticeDispatchAnimation() {
-  noticeDispatchAnimationVisible = true;
-  if (noticeDispatchAnimationTimeout) {
-    clearTimeout(noticeDispatchAnimationTimeout);
-  }
-  noticeDispatchAnimationTimeout = window.setTimeout(() => {
-    noticeDispatchAnimationVisible = false;
-    noticeDispatchAnimationTimeout = null;
-    renderApp();
-  }, 2200);
-}
-
-function openNoticeRecipientModalWithAnimation() {
-  if (noticeRecipientRevealTimeout) {
-    clearTimeout(noticeRecipientRevealTimeout);
-    noticeRecipientRevealTimeout = null;
-  }
-  noticeRecipientModalOpen = false;
-  playNoticeDispatchAnimation();
-  renderApp();
-  noticeRecipientRevealTimeout = window.setTimeout(() => {
-    noticeRecipientModalOpen = true;
-    noticeRecipientRevealTimeout = null;
-    renderApp();
-  }, 900);
 }
 
 function renderPatientSection() {
@@ -2902,7 +2841,8 @@ function openPrefilledMicrosoftForm() {
     return;
   }
   if (activeTab !== "visitLog") {
-    openNoticeRecipientModalWithAnimation();
+    noticeRecipientModalOpen = true;
+    renderApp();
     return;
   }
   window.open(buildMicrosoftFormUrl(), "_blank", "noopener,noreferrer");
@@ -2921,7 +2861,8 @@ function openPrefilledMicrosoftFormWithoutPrompt() {
     return;
   }
   if (activeTab !== "visitLog") {
-    openNoticeRecipientModalWithAnimation();
+    noticeRecipientModalOpen = true;
+    renderApp();
     return;
   }
   window.open(buildMicrosoftFormUrl(), "_blank", "noopener,noreferrer");
@@ -4260,10 +4201,6 @@ app.addEventListener("click", (event) => {
     otherWardEmailOpenFormAfterSave = false;
   }
   if (action === "close-notice-recipient-modal") {
-    if (noticeRecipientRevealTimeout) {
-      clearTimeout(noticeRecipientRevealTimeout);
-      noticeRecipientRevealTimeout = null;
-    }
     noticeRecipientModalOpen = false;
   }
   if (action === "complete-other-ward-email") {
