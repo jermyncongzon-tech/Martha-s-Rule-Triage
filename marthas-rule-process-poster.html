@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Martha's Rule Call Process: Old vs New</title>
+  <style>
+    :root {
+      --navy: #08265c;
+      --navy-2: #123c7b;
+      --teal: #00796b;
+      --teal-2: #0b9a83;
+      --ink: #0a1634;
+      --muted: #516070;
+      --line: #c9d8e8;
+      --paper: #ffffff;
+      --wash: #f4f8fb;
+      --red: #d71920;
+      --orange: #f26a00;
+      --amber: #f4a000;
+      --blue: #0b63b6;
+      --grey: #66717f;
+      --green: #277a35;
+      --shadow: 0 14px 34px rgba(8, 38, 92, .14);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background:
+        linear-gradient(180deg, rgba(247, 250, 252, .98), rgba(231, 240, 247, .92)),
+        radial-gradient(circle at 18% 4%, rgba(0, 121, 107, .09), transparent 28rem),
+        radial-gradient(circle at 88% 10%, rgba(8, 38, 92, .08), transparent 30rem);
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 14px;
+    }
+
+    .export-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 10px;
+      width: min(1760px, 100%);
+      margin: 0 auto 10px;
+    }
+
+    .copy-image-button {
+      display: inline-flex;
+      align-items: center;
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid #adc2d8;
+      border-radius: 8px;
+      color: #fff;
+      background: var(--navy);
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(8, 38, 92, .18);
+    }
+
+    .copy-image-button:disabled {
+      cursor: wait;
+      opacity: .72;
+    }
+
+    .copy-status {
+      min-width: 190px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .poster {
+      width: min(1760px, 100%);
+      margin: 0 auto;
+      padding: 14px 18px 18px;
+      border: 1px solid #adc2d8;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, .98);
+      box-shadow: 0 24px 60px rgba(8, 38, 92, .16);
+      overflow-x: auto;
+    }
+
+    .poster-inner {
+      min-width: 1600px;
+    }
+
+    .poster-title {
+      display: flex;
+      gap: 14px;
+      align-items: end;
+      justify-content: center;
+      margin: 0 0 14px;
+      color: var(--navy);
+      text-align: center;
+      font-size: clamp(28px, 3.25vw, 54px);
+      line-height: 1;
+      letter-spacing: 0;
+      text-transform: uppercase;
+    }
+
+    .poster-title span {
+      color: #001844;
+      font-size: .72em;
+    }
+
+    .workflow {
+      position: relative;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.98), rgba(250,253,255,.98)),
+        linear-gradient(90deg, rgba(8,38,92,.03), rgba(0,121,107,.03));
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8);
+    }
+
+    .workflow + .workflow {
+      margin-top: 14px;
+    }
+
+    .workflow.is-active {
+      outline: 3px solid rgba(0, 121, 107, .2);
+    }
+
+    .section-label {
+      position: absolute;
+      left: 0;
+      top: 0;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 42px;
+      padding: 0 26px;
+      border-bottom-right-radius: 10px;
+      color: #fff;
+      font-size: 24px;
+      font-weight: 900;
+      line-height: 1;
+      text-transform: uppercase;
+      box-shadow: 0 8px 18px rgba(8, 38, 92, .16);
+    }
+
+    .section-label small {
+      font-size: 16px;
+      font-weight: 800;
+      text-transform: none;
+    }
+
+    .old .section-label {
+      background: linear-gradient(90deg, var(--navy), #001949);
+    }
+
+    .new .section-label {
+      background: linear-gradient(90deg, var(--teal), #005c50);
+    }
+
+    .row {
+      position: relative;
+      display: grid;
+      align-items: start;
+      gap: 10px;
+      padding: 64px 22px 28px;
+    }
+
+    .old .row {
+      grid-template-columns: 1.05fr .15fr 1.28fr .15fr 1.35fr .15fr 1.55fr .15fr 1.22fr .15fr 1.08fr;
+      min-height: 392px;
+      padding-bottom: 28px;
+    }
+
+    .new .row {
+      grid-template-columns: .96fr .12fr 1.02fr .12fr 1.08fr .12fr 1.9fr .12fr 1.36fr .12fr 1.1fr .12fr 1.04fr .12fr 1.08fr;
+      min-height: 440px;
+      padding-bottom: 42px;
+    }
+
+    .step {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      text-align: left;
+      cursor: default;
+    }
+
+    .step-card {
+      display: grid;
+      grid-template-rows: auto 144px 1fr;
+      min-height: 262px;
+      padding: 14px 12px 12px;
+      border: 1px solid rgba(201, 216, 232, .9);
+      border-radius: 10px;
+      background: rgba(255,255,255,.72);
+      box-shadow: 0 10px 28px rgba(8,38,92,.05);
+      transition: transform .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .new .step-card {
+      grid-template-rows: auto 146px 1fr;
+      min-height: 334px;
+    }
+
+    .new .step:last-child .step-card {
+      grid-template-rows: auto 126px 1fr;
+      padding-inline: 10px;
+    }
+
+    .new .step:last-child h2 {
+      font-size: 14px;
+    }
+
+    .new .step:last-child .illustration,
+    .new .step:last-child .illustration img {
+      height: 124px;
+    }
+
+    .new .step:last-child p {
+      padding: 8px;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    .old .step {
+      color: var(--navy);
+    }
+
+    .new .step {
+      color: var(--teal);
+    }
+
+    .step h2 {
+      min-height: 42px;
+      margin: 0 0 10px;
+      color: var(--ink);
+      font-size: clamp(13px, .92vw, 18px);
+      line-height: 1.12;
+      letter-spacing: 0;
+      text-align: center;
+    }
+
+    .step p {
+      align-self: stretch;
+      margin: 10px 0 0;
+      padding: 10px 11px;
+      border: 1px solid rgba(201, 216, 232, .9);
+      border-radius: 8px;
+      color: #111827;
+      background: rgba(248, 251, 253, .94);
+      font-size: clamp(12px, .82vw, 16px);
+      line-height: 1.35;
+    }
+
+    .old .step p {
+      border-color: rgba(8, 38, 92, .16);
+      background: rgba(235, 241, 249, .84);
+    }
+
+    .new .step p {
+      border-color: rgba(0, 121, 107, .18);
+      background: rgba(233, 247, 243, .82);
+    }
+
+    .step strong {
+      font-weight: 900;
+    }
+
+    .arrow {
+      position: relative;
+      z-index: 0;
+      display: grid;
+      place-items: center;
+      min-height: 250px;
+      pointer-events: none;
+    }
+
+    .arrow svg {
+      display: block;
+      width: 38px;
+      height: 38px;
+      fill: #29384c;
+      stroke: none;
+    }
+
+    .new .arrow {
+      min-height: 314px;
+    }
+
+    .illustration {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 144px;
+      padding: 4px;
+    }
+
+    .illustration img,
+    .spot-img {
+      display: block;
+      width: min(100%, 174px);
+      height: 140px;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+
+    .new .illustration {
+      height: 146px;
+    }
+
+    .new .illustration img {
+      height: 144px;
+    }
+
+    .route-panel {
+      display: block;
+      padding: 10px;
+      border: 1px solid #d6e3f0;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #fffaf2, #fafdff);
+      box-shadow: 0 14px 34px rgba(8,38,92,.08);
+    }
+
+    .route-panel h2 {
+      margin-bottom: 5px;
+    }
+
+    .route-list {
+      display: grid;
+      gap: 7px;
+    }
+
+    .route-card {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 8px;
+      align-items: center;
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #dde6ef;
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      text-align: left;
+      cursor: pointer;
+      transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+    }
+
+    .route-card:hover,
+    .route-card:focus-visible,
+    .route-card.active {
+      border-color: var(--ink);
+      box-shadow: 0 8px 18px rgba(8, 38, 92, .13);
+      transform: translateX(2px);
+      outline: none;
+    }
+
+    .route-code {
+      display: grid;
+      place-items: center;
+      height: 40px;
+      border-radius: 7px;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 900;
+    }
+
+    .route-icon {
+      display: grid;
+      place-items: center;
+      color: currentColor;
+    }
+
+    .route-icon img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      mix-blend-mode: multiply;
+    }
+
+    .route-copy {
+      display: grid;
+      gap: 2px;
+      font-size: 12.5px;
+      line-height: 1.22;
+    }
+
+    .route-copy strong {
+      font-size: 13px;
+    }
+
+    .u1 { color: var(--red); }
+    .u1 .route-code { background: var(--red); }
+    .u2 { color: var(--orange); }
+    .u2 .route-code { background: var(--orange); }
+    .u3 { color: var(--amber); }
+    .u3 .route-code { background: var(--amber); }
+    .u4 { color: var(--blue); }
+    .u4 .route-code { background: var(--blue); }
+    .u5 { color: var(--grey); }
+    .u5 .route-code { background: var(--grey); }
+
+    .notify-stack {
+      display: grid;
+      gap: 12px;
+      min-height: 314px;
+      align-content: center;
+    }
+
+    .notify-card {
+      padding: 12px 10px;
+      border: 1px solid currentColor;
+      border-radius: 10px;
+      text-align: center;
+      background: color-mix(in srgb, currentColor 8%, #fff);
+      box-shadow: 0 10px 24px rgba(8,38,92,.06);
+    }
+
+    .notify-card h3 {
+      margin: 6px 0 4px;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .notify-card p {
+      margin: 0;
+      font-size: 11px;
+      line-height: 1.25;
+    }
+
+    .review-stack {
+      display: grid;
+      gap: 8px;
+    }
+
+    .review-box {
+      position: relative;
+      padding: 11px 10px;
+      border: 1px solid #b7d7ea;
+      border-radius: 10px;
+      background: #f3fbff;
+      text-align: center;
+      box-shadow: 0 10px 24px rgba(8,38,92,.06);
+    }
+
+    .combined-review {
+      min-height: 334px;
+    }
+
+    .old-review-card {
+      display: block;
+    }
+
+    .old-review-options {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .old-review-option {
+      display: grid;
+      gap: 6px;
+      padding: 8px;
+      border: 1px solid rgba(8, 38, 92, .16);
+      border-radius: 8px;
+      background: rgba(235, 241, 249, .84);
+    }
+
+    .old-review-option strong {
+      color: var(--navy);
+      font-size: 13px;
+      line-height: 1.18;
+    }
+
+    .old-review-option p {
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      font-size: 12px;
+      line-height: 1.24;
+    }
+
+    .review-options {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .review-option {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      align-items: start;
+      min-height: 124px;
+      padding: 8px;
+      border: 1px solid #cfe2ef;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, .76);
+    }
+
+    .review-box .spot-img {
+      width: 100% !important;
+      max-width: 78px;
+      height: 78px !important;
+      margin: 0 auto;
+      object-fit: contain;
+    }
+
+    .review-option-copy {
+      display: grid;
+      gap: 5px;
+      text-align: center;
+    }
+
+    .review-box.local {
+      border-color: #bddcbd;
+      background: #f3fbf3;
+    }
+
+    .review-box h3 {
+      margin: 0 0 5px;
+      font-size: 13px;
+      line-height: 1.12;
+    }
+
+    .review-box p {
+      margin: 5px 0 0;
+      padding: 7px;
+      border-radius: 7px;
+      background: rgba(255,255,255,.76);
+      font-size: 10.5px;
+      line-height: 1.2;
+    }
+
+    .note {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 9px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      min-height: 32px;
+      padding: 5px 12px;
+      border: 1px solid #cde5dc;
+      border-radius: 7px;
+      color: #0b594f;
+      background: #f4fbf8;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+
+    .note strong {
+      white-space: nowrap;
+    }
+
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      max-width: 1760px;
+      margin: 0 auto 10px;
+      padding: 8px;
+      border: 1px solid rgba(173, 194, 216, .8);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .88);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 24px rgba(8, 38, 92, .08);
+    }
+
+    .toolbar button {
+      min-height: 36px;
+      padding: 0 14px;
+      border: 1px solid #c9d8e8;
+      border-radius: 6px;
+      color: var(--ink);
+      background: #fff;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .toolbar button[aria-pressed="true"] {
+      color: #fff;
+      border-color: var(--navy);
+      background: var(--navy);
+    }
+
+    .detail {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 20;
+      width: min(560px, calc(100vw - 36px));
+      max-height: calc(100vh - 36px);
+      border: 1px solid #afc3d8;
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 20px 50px rgba(8, 38, 92, .22);
+      transform: translateY(calc(100% + 28px));
+      transition: transform .2s ease;
+      overflow: hidden;
+    }
+
+    .detail.open {
+      transform: translateY(0);
+    }
+
+    .detail-head {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      color: #fff;
+      background: var(--navy);
+    }
+
+    .detail-head h3 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.15;
+    }
+
+    .detail-head button {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 6px;
+      color: #fff;
+      background: rgba(255,255,255,.14);
+      cursor: pointer;
+    }
+
+    .detail-body {
+      padding: 14px;
+      overflow: auto;
+      max-height: calc(100vh - 104px);
+    }
+
+    .detail-body p {
+      margin: 0 0 10px;
+      color: #17233b;
+      line-height: 1.45;
+    }
+
+    .detail-body ul {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .detail-body li {
+      padding: 8px;
+      border: 1px solid #e0e8f2;
+      border-radius: 6px;
+      background: #f8fbfd;
+      font-size: 13px;
+    }
+
+    .logic-stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .logic-card {
+      display: grid;
+      gap: 5px;
+      padding: 10px;
+      border: 1px solid #dce7f2;
+      border-radius: 7px;
+      background: #f8fbfd;
+    }
+
+    .logic-card strong {
+      color: var(--navy);
+    }
+
+    .logic-card p {
+      margin: 0;
+      font-size: 13px;
+    }
+
+    .logic-card .result {
+      display: inline-flex;
+      width: fit-content;
+      padding: 4px 7px;
+      border-radius: 6px;
+      color: #fff;
+      background: var(--navy);
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .focus-old .new,
+    .focus-new .old {
+      opacity: .24;
+    }
+
+    .focus-routes .step:not(.route-owner),
+    .focus-routes .notify-stack,
+    .focus-routes .review-stack,
+    .focus-routes .note,
+    .focus-routes .old {
+      opacity: .2;
+    }
+
+    .focus-routes .route-panel,
+    .focus-routes .route-card {
+      opacity: 1;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    svg.art {
+      width: 100%;
+      max-width: 156px;
+      height: 132px;
+    }
+
+    .new svg.art {
+      max-width: 164px;
+      height: 140px;
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        padding: 8px;
+      }
+
+      .poster-title {
+        justify-content: flex-start;
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg class="sr-only" aria-hidden="true">
+    <symbol id="i-arrow" viewBox="0 0 48 48">
+      <path d="M4 18h25V8l15 16-15 16V30H4z"></path>
+    </symbol>
+    <symbol id="i-phone" viewBox="0 0 180 150">
+      <circle cx="78" cy="72" r="58" fill="#e8f0f8"></circle>
+      <path d="M61 24c-7 2-17 8-18 17-1 15 8 36 25 54s39 27 54 25c9-1 15-11 17-18l-27-19-14 14c-11-3-20-8-28-16s-14-18-16-29l14-14z" fill="#092d69"></path>
+      <path d="M111 39c14 6 25 17 31 31M102 57c8 4 15 11 19 19" fill="none" stroke="#092d69" stroke-width="6" stroke-linecap="round"></path>
+    </symbol>
+    <symbol id="i-phone-teal" viewBox="0 0 180 150">
+      <circle cx="78" cy="72" r="58" fill="#e3f2ef"></circle>
+      <path d="M61 24c-7 2-17 8-18 17-1 15 8 36 25 54s39 27 54 25c9-1 15-11 17-18l-27-19-14 14c-11-3-20-8-28-16s-14-18-16-29l14-14z" fill="#00796b"></path>
+      <path d="M111 39c14 6 25 17 31 31M102 57c8 4 15 11 19 19" fill="none" stroke="#00796b" stroke-width="6" stroke-linecap="round"></path>
+    </symbol>
+    <symbol id="i-handler" viewBox="0 0 180 150">
+      <rect x="24" y="83" width="64" height="40" rx="5" fill="#263746"></rect>
+      <rect x="31" y="90" width="50" height="25" fill="#111827"></rect>
+      <path d="M111 126c28 0 45-8 45-18 0-23-14-39-35-39s-35 16-35 39c0 10 6 18 25 18z" fill="#1d5a94"></path>
+      <circle cx="121" cy="47" r="25" fill="#f7bc7a"></circle>
+      <path d="M95 52c-3-25 12-39 31-37 19 2 30 18 25 41-11-9-29-11-56-4z" fill="#5a321c"></path>
+      <path d="M96 55h-5c-5 0-8 4-8 9v7M146 55h5c5 0 8 4 8 9v7M88 71h12M142 71h12" fill="none" stroke="#233241" stroke-width="5" stroke-linecap="round"></path>
+      <path d="M114 63c5 4 10 4 15 0M121 71v7" fill="none" stroke="#6c351f" stroke-width="3" stroke-linecap="round"></path>
+      <rect x="110" y="103" width="22" height="32" rx="3" fill="#fff"></rect>
+      <path d="M121 103v32" stroke="#9ab1c6" stroke-width="2"></path>
+    </symbol>
+    <symbol id="i-handler-teal" viewBox="0 0 180 150">
+      <rect x="66" y="92" width="67" height="34" rx="5" fill="#24394a"></rect>
+      <rect x="73" y="98" width="53" height="21" fill="#101827"></rect>
+      <path d="M78 126c-28 0-45-8-45-18 0-23 14-39 35-39s35 16 35 39c0 10-6 18-25 18z" fill="#00856f"></path>
+      <circle cx="68" cy="47" r="25" fill="#f5b878"></circle>
+      <path d="M43 52c-3-25 12-39 31-37 19 2 30 18 25 41-11-9-29-11-56-4z" fill="#1f2630"></path>
+      <path d="M43 55h-5c-5 0-8 4-8 9v7M94 55h5c5 0 8 4 8 9v7M35 71h12M89 71h12" fill="none" stroke="#233241" stroke-width="5" stroke-linecap="round"></path>
+      <path d="M61 63c5 4 10 4 15 0M68 71v7" fill="none" stroke="#6c351f" stroke-width="3" stroke-linecap="round"></path>
+      <rect x="57" y="103" width="22" height="32" rx="3" fill="#fff"></rect>
+      <path d="M68 103v32" stroke="#9ab1c6" stroke-width="2"></path>
+    </symbol>
+    <symbol id="i-team" viewBox="0 0 180 150">
+      <path d="M28 128c0-24 13-39 32-39s32 15 32 39z" fill="#1f5d96"></path>
+      <circle cx="60" cy="62" r="22" fill="#f4b674"></circle>
+      <path d="M38 65c0-24 9-35 23-35 14 0 24 12 22 35-12-10-28-10-45 0z" fill="#212b36"></path>
+      <path d="M90 128c0-32 17-52 42-52s42 20 42 52z" fill="#f7f9fb"></path>
+      <path d="M99 128V91M165 128V91" stroke="#1f5d96" stroke-width="9" stroke-linecap="round"></path>
+      <circle cx="132" cy="46" r="27" fill="#f6bd7d"></circle>
+      <path d="M106 49c-1-24 11-37 28-37 18 0 30 14 27 37-15-8-35-9-55 0z" fill="#b76d2d"></path>
+      <path d="M121 62c7 5 14 5 21 0" fill="none" stroke="#753b1e" stroke-width="3" stroke-linecap="round"></path>
+      <path d="M126 93c-10 14-13 28-13 35M138 93c10 14 13 28 13 35" fill="none" stroke="#152238" stroke-width="3"></path>
+      <circle cx="113" cy="129" r="5" fill="#152238"></circle>
+      <circle cx="151" cy="129" r="5" fill="#152238"></circle>
+    </symbol>
+    <symbol id="i-bed" viewBox="0 0 180 150">
+      <rect x="24" y="87" width="130" height="38" rx="6" fill="#d8e1ea" stroke="#7d8da0" stroke-width="4"></rect>
+      <rect x="31" y="68" width="45" height="34" rx="7" fill="#fff" stroke="#7d8da0" stroke-width="4"></rect>
+      <circle cx="53" cy="57" r="16" fill="#f4b674"></circle>
+      <path d="M39 57c1-17 11-24 24-19 5 2 8 6 9 11-11-4-21-2-33 8z" fill="#6f3c22"></path>
+      <path d="M80 89h69" stroke="#0b63b6" stroke-width="8"></path>
+      <rect x="127" y="23" width="44" height="34" rx="4" fill="#08265c" stroke="#7d8da0" stroke-width="4"></rect>
+      <path d="M132 41h11l4-10 8 20 4-10h9" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M24 126v14M154 126v14" stroke="#596b7f" stroke-width="5" stroke-linecap="round"></path>
+      <path d="M86 48c13-16 34-17 49-3" fill="none" stroke="#2b83c6" stroke-width="7" stroke-linecap="round"></path>
+    </symbol>
+    <symbol id="i-clipboard" viewBox="0 0 180 150">
+      <rect x="54" y="18" width="78" height="112" rx="8" fill="#f7fafc" stroke="#29384c" stroke-width="6"></rect>
+      <rect x="76" y="14" width="34" height="18" rx="5" fill="#73879a"></rect>
+      <path d="M70 55l9 9 17-20M70 82l9 9 17-20M70 109l9 9 17-20" fill="none" stroke="#00796b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M108 58h18M108 85h18M108 112h18" stroke="#29384c" stroke-width="4" stroke-linecap="round"></path>
+    </symbol>
+    <symbol id="i-chart" viewBox="0 0 180 150">
+      <rect x="34" y="30" width="112" height="84" rx="6" fill="#f7fafc" stroke="#29384c" stroke-width="7"></rect>
+      <rect x="54" y="78" width="15" height="22" fill="#2b83c6"></rect>
+      <rect x="78" y="61" width="15" height="39" fill="#2b83c6"></rect>
+      <rect x="102" y="67" width="15" height="33" fill="#2b83c6"></rect>
+      <path d="M57 121h66M90 114v21" stroke="#29384c" stroke-width="6" stroke-linecap="round"></path>
+    </symbol>
+    <symbol id="i-app" viewBox="0 0 180 150">
+      <rect x="57" y="16" width="74" height="108" rx="8" fill="#f7fafc" stroke="#29384c" stroke-width="6"></rect>
+      <rect x="78" y="12" width="32" height="16" rx="4" fill="#73879a"></rect>
+      <path d="M73 53l9 9 16-20M73 80l9 9 16-20M73 107l9 9 16-20" fill="none" stroke="#00796b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+      <circle cx="130" cy="113" r="28" fill="#357a38"></circle>
+      <path d="M118 113l9 9 17-21" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"></path>
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 180 150">
+      <circle cx="90" cy="48" r="18" fill="currentColor"></circle>
+      <circle cx="62" cy="61" r="15" fill="currentColor" opacity=".85"></circle>
+      <circle cx="118" cy="61" r="15" fill="currentColor" opacity=".85"></circle>
+      <path d="M48 126c1-29 17-45 42-45s41 16 42 45z" fill="currentColor"></path>
+      <path d="M28 126c1-24 14-37 34-37 5 0 10 1 14 3-11 8-18 19-20 34zM124 126c-2-15-9-26-20-34 5-2 9-3 14-3 20 0 33 13 34 37z" fill="currentColor" opacity=".75"></path>
+    </symbol>
+    <symbol id="i-mail" viewBox="0 0 180 150">
+      <rect x="32" y="43" width="116" height="74" rx="7" fill="#eef8ef" stroke="#357a38" stroke-width="5"></rect>
+      <path d="M36 50l54 42 54-42M36 113l38-34M144 113l-38-34" fill="none" stroke="#357a38" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>
+      <path d="M76 24h28v28H76z" fill="#fff" stroke="#357a38" stroke-width="5"></path>
+    </symbol>
+    <symbol id="i-dashboard" viewBox="0 0 180 150">
+      <rect x="30" y="31" width="120" height="82" rx="7" fill="#f7fafc" stroke="#29384c" stroke-width="7"></rect>
+      <path d="M61 93V72M84 93V55M107 93V66M130 93V43" stroke="#84a879" stroke-width="10"></path>
+      <path d="M62 55a24 24 0 1 0 24 24H62z" fill="#00796b"></path>
+      <path d="M86 79h24a24 24 0 0 0-24-24z" fill="#b6d4aa"></path>
+      <path d="M60 122h60M90 113v20" stroke="#29384c" stroke-width="6" stroke-linecap="round"></path>
+    </symbol>
+    <symbol id="i-debrief" viewBox="0 0 180 150">
+      <circle cx="58" cy="98" r="21" fill="#29384c"></circle>
+      <circle cx="96" cy="91" r="25" fill="#29384c"></circle>
+      <circle cx="134" cy="98" r="21" fill="#357a38"></circle>
+      <path d="M24 136c2-22 14-34 34-34s32 12 34 34zM59 136c2-28 16-43 37-43s35 15 37 43zM103 136c2-22 14-34 34-34s32 12 34 34z" fill="#29384c"></path>
+      <path d="M126 42h30c7 0 12 5 12 12v13c0 7-5 12-12 12h-11l-16 14V79h-3c-7 0-12-5-12-12V54c0-7 5-12 12-12z" fill="#00796b"></path>
+      <path d="M130 61h4M142 61h4M154 61h4" stroke="#fff" stroke-width="5" stroke-linecap="round"></path>
+    </symbol>
+  </svg>
+
+  <main class="app">
+    <div class="export-bar">
+      <span class="copy-status" id="copyStatus" aria-live="polite"></span>
+      <button class="copy-image-button" type="button" id="copyPosterImage">Copy as static image</button>
+    </div>
+    <article class="poster" aria-label="Martha's Rule Call Process: Old vs New">
+      <div class="poster-inner">
+        <h1 class="poster-title">Martha's Rule Call Process: <span>Old vs New</span></h1>
+
+        <section class="workflow old" aria-label="Old process current workflow">
+          <div class="section-label">Old Process <small>Current Workflow</small></div>
+          <div class="row">
+            <div class="step"><div class="step-card">
+              <h2>1. Call Received</h2>
+              <div class="illustration"><img src="assets/process-illustrations/phone-call.png" alt=""></div>
+              <p>Martha's Rule call received by PERRT at WMS.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>2. Call Handled</h2>
+              <div class="illustration"><img src="assets/process-illustrations/call-handler.png" alt=""></div>
+              <p>Call handler records details, engages with the call with minimal structure, and documents in Epic.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>3. Handed Over to Local PERRT Team</h2>
+              <div class="illustration"><img src="assets/process-illustrations/rapid-response-team.png" alt=""></div>
+              <p>All calls are passed to the relevant local PERRT team, regardless of concern type or urgency.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card old-review-card">
+              <h2>4. PERRT Reviews Patient</h2>
+              <div class="illustration"><img src="assets/process-illustrations/patient-review.png" alt=""></div>
+              <div class="old-review-options">
+                <div class="old-review-option">
+                  <strong>4a. PERRT reviews patient</strong>
+                  <p>PERRT decides how to respond and usually reviews the patient.</p>
+                </div>
+                <div class="old-review-option">
+                  <strong>4b. If PERRT cannot attend</strong>
+                  <p>The case is handed over to the local ward regardless of urgency.</p>
+                </div>
+              </div>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>5. Outcome and Communication</h2>
+              <div class="illustration"><img src="assets/process-illustrations/checklist.png" alt=""></div>
+              <p>Outcome documented in Epic and call log MS Forms.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>6. Learning and Reporting</h2>
+              <div class="illustration"><img src="assets/process-illustrations/reporting-chart.png" alt=""></div>
+              <p>Data extracted from spreadsheet for reporting and learning.</p>
+            </div></div>
+          </div>
+        </section>
+
+        <section class="workflow new" aria-label="New process proposed workflow with system">
+          <div class="section-label">New Process <small>Proposed Workflow with System</small></div>
+          <div class="row">
+            <div class="step"><div class="step-card">
+              <h2>1. Call Received</h2>
+              <div class="illustration"><img src="assets/process-illustrations/phone-call.png" alt=""></div>
+              <p>Martha's Rule call received by PERRT at WMS.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>2. Call Handled</h2>
+              <div class="illustration"><img src="assets/process-illustrations/call-handler.png" alt=""></div>
+              <p>Call handler records details using the <strong>Martha's Rule Triage System</strong> for structured capture.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>3. Triage and Initial Assessment</h2>
+              <div class="illustration"><img src="assets/process-illustrations/triage-app.png" alt=""></div>
+              <p>Call handler completes structured triage to understand concern and determine urgency.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step route-owner"><div class="step-card route-panel">
+              <h2>4. Appropriate Route and Notifications<br><small>U1-U5 Categorisation</small></h2>
+              <div class="route-list">
+                <button class="route-card u1" type="button" data-route="u1"><span class="route-code">U1</span><span class="route-copy"><strong>Emergent</strong>Immediate escalation to PERRT.</span></button>
+                <button class="route-card u2" type="button" data-route="u2"><span class="route-code">U2</span><span class="route-copy"><strong>Urgent clinical</strong>Escalate to PERRT urgently.</span></button>
+                <button class="route-card u3" type="button" data-route="u3"><span class="route-code">U3</span><span class="route-copy"><strong>Routine clinical</strong>Notify local team and local PERRT.</span></button>
+                <button class="route-card u4" type="button" data-route="u4"><span class="route-code">U4</span><span class="route-copy"><strong>Service or admin</strong>Notify local team and local PERRT.</span></button>
+                <button class="route-card u5" type="button" data-route="u5"><span class="route-code">U5</span><span class="route-copy"><strong>Unclear or insufficient information</strong>Notify local team and local PERRT.</span></button>
+              </div>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="review-stack">
+              <div class="step review-box combined-review">
+                <h3>5. Review and Response<br><small>as required or appropriate</small></h3>
+                <div class="review-options">
+                  <div class="review-option">
+                    <img class="spot-img" src="assets/process-illustrations/rapid-response-team.png" alt="">
+                    <div class="review-option-copy">
+                      <strong>5a. PERRT Review</strong>
+                      <p>Clinician attends and reviews patient. Logged in MR call visit log system and Epic.</p>
+                    </div>
+                  </div>
+                  <div class="review-option">
+                    <img class="spot-img" src="assets/process-illustrations/local-team-review.png" alt="">
+                    <div class="review-option-copy">
+                      <strong>5b. Local Team Review</strong>
+                      <p>Local team responds and logs in Epic.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>6. Outcome Shared and Closed</h2>
+              <div class="illustration"><img src="assets/process-illustrations/outcome-mail.png" alt=""></div>
+              <p>Outcome automatically cascaded to caller and team(s), then recorded for closure.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>7. Data for Governance and Learning</h2>
+              <div class="illustration"><img src="assets/process-illustrations/analytics-dashboard.png" alt=""></div>
+              <p>Structured data captured in the system for reporting, monitoring, and learning.</p>
+            </div></div>
+            <div class="arrow"><svg><use href="#i-arrow"></use></svg></div>
+            <div class="step"><div class="step-card">
+              <h2>8. Debrief Format</h2>
+              <div class="illustration"><img src="assets/process-illustrations/debrief.png" alt=""></div>
+              <p>Debrief captured in the system using a standardised format.</p>
+            </div></div>
+          </div>
+        </section>
+      </div>
+    </article>
+
+    <aside class="detail" id="detail" aria-live="polite">
+      <div class="detail-head">
+        <h3 id="detailTitle">Process detail</h3>
+        <button type="button" id="closeDetail" aria-label="Close detail">×</button>
+      </div>
+      <div class="detail-body" id="detailBody"></div>
+    </aside>
+  </main>
+
+  <script>
+    const routeLogic = {
+      u1: { title: "U1 - Emergent", intro: "The system assigns U1 when the caller describes acute deterioration with clear warning signs.", result: "Route: immediate PERRT/Outreach review.", cards: [["Acute deterioration question", "The handler answers Yes or Unsure to: Is there concern that the patient may be acutely deteriorating right now?"], ["Warning signs question", "At least one acute warning sign is selected, such as severe breathlessness, chest pain, collapse, seizure, reduced consciousness, active bleeding, possible sepsis with deterioration, sudden confusion, or rapid worsening."], ["Route", "The call routes directly to immediate PERRT/Outreach review."]] },
+      u2: { title: "U2 - Urgent clinical", intro: "The system assigns U2 by either of two routes: acute deterioration is raised but no warning signs are selected, or the concern is non-acute but PERRT still needs to see the patient urgently.", result: "Result: urgent PERRT/Outreach review.", cards: [["Acute deterioration question", "U2 applies when the handler answers Yes or Unsure to acute deterioration, but no acute warning signs are selected."], ["PERRT review question", "U2 also applies when the handler answers No to acute deterioration, but thinks PERRT/Outreach review is still needed for a non-acute clinical concern."], ["Primary concern", "A clinical primary concern is selected, such as deterioration worry, treatment or plan concerns, symptoms, monitoring, pain, medication, discharge planning, or another clinical issue."], ["Secondary concern", "The handler still records why this escalated to Martha's Rule, such as delay, unclear information, difficulty reaching the right person, unresolved concern, feeling dismissed, or genuine worry."], ["Route", "PERRT/Outreach review is notified and the case remains urgent clinical."]] },
+      u3: { title: "U3 - Routine clinical", intro: "The system assigns U3 when the main issue is clinical, but it does not need urgent same-day PERRT/Outreach review.", result: "Result: local team notified; local PERRT notified for awareness.", cards: [["Acute deterioration question", "No clear acute deterioration warning signs are selected."], ["PERRT review question", "The system asks whether urgent PERRT/Outreach review is needed. If the answer is No, the route remains routine clinical."], ["Primary concern", "The primary concern is clinical: it is mainly about the patient's condition, care plan, treatment, observations, symptoms, pain, medication, or discharge planning."], ["Secondary concern", "The secondary concern records why the issue escalated, for example poor communication, delay, difficulty accessing the ward team, feeling dismissed, unresolved concern, or family worry."], ["Route", "Notification is sent to the local team. Notice is also sent to local PERRT for their awareness."]] },
+      u4: { title: "U4 - Service or admin", intro: "The system assigns U4 when the primary concern is mainly service recovery, communication, practical access, administrative, or environmental rather than direct clinical.", result: "Result: local team notified; local PERRT notified for awareness.", cards: [["Acute deterioration question", "No acute deterioration warning signs are selected."], ["PERRT review question", "Not normally asked because the primary concern is not clinical. If the concern becomes clinical, it should be re-coded through the clinical route."], ["Primary concern", "The primary concern is service/admin, such as communication issue, access problem, non-clinical concern, environment, practical support, or signposting to another team."], ["Secondary concern", "The secondary concern explains what made the caller escalate, such as not receiving clear information, difficulty getting a response, delay, or feeling dismissed."], ["Route", "Notification is sent to the local team. Notice is also sent to local PERRT for their awareness."]] },
+      u5: { title: "U5 - Unclear or insufficient information", intro: "The system assigns U5 when there is not enough information to classify the call safely into clinical, service/admin, or urgent deterioration categories.", result: "Result: local team notified; local PERRT notified for awareness.", cards: [["Acute deterioration question", "No clear acute deterioration route has been established from the available information."], ["PERRT review question", "Not enough detail exists to answer the urgent PERRT review question reliably. The case needs clarification or signposting."], ["Primary concern", "The primary concern is missing, too broad, vague, conflicting, or does not fit the available clinical/service categories."], ["Secondary concern", "The secondary concern or genuine-worry follow-up can still show why the caller rang, but more information is needed before a safer category can be confirmed."], ["Route", "Notification is sent to the local team. Notice is also sent to local PERRT for their awareness while the case is clarified or signposted."]] }
+    };
+
+    const detail = document.querySelector("#detail");
+    const detailTitle = document.querySelector("#detailTitle");
+    const detailBody = document.querySelector("#detailBody");
+    const copyButton = document.querySelector("#copyPosterImage");
+    const copyStatus = document.querySelector("#copyStatus");
+
+    function openRouteLogic(route) {
+      const item = routeLogic[route];
+      if (!item) return;
+      document.querySelectorAll(".route-card").forEach(card => card.classList.toggle("active", card.dataset.route === route));
+      detailTitle.textContent = item.title;
+      detailBody.innerHTML = '<p>' + item.intro + '</p><div class="logic-stack">' + item.cards.map(([label, copy]) => '<article class="logic-card"><strong>' + label + '</strong><p>' + copy + '</p></article>').join('') + '<article class="logic-card"><span class="result">' + item.result + '</span></article></div>';
+      detail.classList.add("open");
+    }
+
+    document.addEventListener("click", event => {
+      const routeCard = event.target.closest(".route-card");
+      if (!routeCard) return;
+      openRouteLogic(routeCard.dataset.route);
+    });
+
+    document.querySelector("#closeDetail").addEventListener("click", () => {
+      detail.classList.remove("open");
+      document.querySelectorAll(".route-card").forEach(item => item.classList.remove("active"));
+    });
+
+    async function imageToDataUrl(src) {
+      try {
+        const response = await fetch(src);
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } catch (error) {
+        return src;
+      }
+    }
+
+    async function clonePosterWithInlineImages(poster) {
+      const clone = poster.cloneNode(true);
+      const sourceImages = poster.querySelectorAll("img");
+      const cloneImages = clone.querySelectorAll("img");
+      for (let index = 0; index < cloneImages.length; index += 1) {
+        cloneImages[index].src = await imageToDataUrl(sourceImages[index].src);
+      }
+      return clone;
+    }
+
+    function collectStyles() {
+      return Array.from(document.styleSheets).map(sheet => {
+        try {
+          return Array.from(sheet.cssRules).map(rule => rule.cssText).join("\n");
+        } catch (error) {
+          return "";
+        }
+      }).join("\n");
+    }
+
+    function canvasToBlob(canvas) {
+      return new Promise(resolve => canvas.toBlob(resolve, "image/png", 1));
+    }
+
+    async function renderPosterCanvas() {
+      const poster = document.querySelector(".poster");
+      const clone = await clonePosterWithInlineImages(poster);
+      const width = poster.scrollWidth;
+      const height = poster.scrollHeight;
+      clone.style.width = `${width}px`;
+      clone.style.height = `${height}px`;
+      clone.style.overflow = "visible";
+
+      const html = `
+        <html xmlns="http://www.w3.org/1999/xhtml">
+          <head><style>${collectStyles()}</style></head>
+          <body style="margin:0;background:#f4f8fb;">${clone.outerHTML}</body>
+        </html>
+      `;
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+          <foreignObject width="100%" height="100%">${html}</foreignObject>
+        </svg>
+      `;
+      const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+      const image = new Image();
+      image.decoding = "async";
+      await new Promise((resolve, reject) => {
+        image.onload = resolve;
+        image.onerror = reject;
+        image.src = url;
+      });
+      const scale = Math.min(2, window.devicePixelRatio || 1.5);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const context = canvas.getContext("2d");
+      context.fillStyle = "#f4f8fb";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.scale(scale, scale);
+      context.drawImage(image, 0, 0);
+      URL.revokeObjectURL(url);
+      return canvas;
+    }
+
+    function downloadCanvas(canvas) {
+      const link = document.createElement("a");
+      link.download = "marthas-rule-process-poster.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    }
+
+    copyButton.addEventListener("click", async () => {
+      copyButton.disabled = true;
+      copyStatus.textContent = "Preparing image...";
+      try {
+        const canvas = await renderPosterCanvas();
+        const blob = await canvasToBlob(canvas);
+        if (!blob) throw new Error("Could not create PNG.");
+        if (navigator.clipboard && window.ClipboardItem) {
+          await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          copyStatus.textContent = "Copied image to clipboard.";
+        } else {
+          downloadCanvas(canvas);
+          copyStatus.textContent = "Clipboard unavailable; downloaded PNG.";
+        }
+      } catch (error) {
+        try {
+          const canvas = await renderPosterCanvas();
+          downloadCanvas(canvas);
+          copyStatus.textContent = "Clipboard blocked; downloaded PNG.";
+        } catch (fallbackError) {
+          copyStatus.textContent = "Copy failed in this browser.";
+        }
+      } finally {
+        copyButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

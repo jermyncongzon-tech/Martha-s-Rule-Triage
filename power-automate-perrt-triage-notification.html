@@ -1,0 +1,393 @@
+<!-- =========================
+     MARTHA'S RULE CALL TRIAGE NOTIFICATION
+     Outlook-safe segmented email
+     Purpose: PERRT-facing triage notification
+     Includes: pre-filled PERRT Call Visit Log link using case code, MRN, ward/area, bed number and triage summary details
+     ========================= -->
+
+<div style="margin:0; padding:0; background:#ffffff;">
+  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background:#ffffff; width:100%;">
+    <tbody>
+      <tr>
+        <td style="padding:24px 12px;">
+
+          <!-- Container -->
+          <table cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:860px; border-collapse:separate; border-spacing:0; font-family:Arial, Helvetica, sans-serif; color:#1a1a1a;">
+
+            <tbody>
+
+              <!-- Header bar -->
+              <tr>
+                <td style="background:#007A78; padding:22px 20px; border-radius:12px 12px 0 0; text-align:center;">
+                  <div style="font-size:22px; line-height:28px; font-weight:700; color:#ffffff;">
+                    Martha’s Rule Call Triage Notification
+                  </div>
+                  <div style="font-size:15px; line-height:21px; font-weight:700; color:#e7f6f6; margin-top:8px;">
+                    @{outputs('Get_response_details')?['body/r66cf613485964d4383c8aa51890fcf75']}
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Intro card -->
+              <tr>
+                <td style="background:#ffffff; border:1px solid #d9e7e7; border-top:none; padding:18px 20px;">
+                  <p style="margin:0 0 12px 0; font-size:14px; line-height:20px;">
+                    Dear PERRT colleagues,
+                  </p>
+
+                  <p style="margin:0; font-size:14px; line-height:20px;">
+                    This is an automated notification to inform you that a <strong>Martha’s Rule call</strong> has been placed and triaged. Based on the information provided by the caller, the triage outcome is shown below. If PERRT attends to assess the patient, please use the pre-filled Call Visit Log link at the end of this email so the visit is linked to the correct Martha’s Rule call record.
+                  </p>
+                </td>
+              </tr>
+
+              <!-- Triage Summary Title -->
+              <tr>
+                <td style="background:#ffffff; border:1px solid #d9e7e7; border-top:none; padding:14px 20px;">
+                  <div style="text-align:center; font-size:15px; line-height:20px; font-weight:700; color:#005E5C;">
+                    Martha’s Rule Call Triage Summary
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Body wrapper -->
+              <tr>
+                <td style="background:#ffffff; border:1px solid #d9e7e7; border-top:none; padding:16px 20px 18px 20px; border-radius:0 0 12px 12px;">
+
+                  <!-- TWO-COLUMN BODY -->
+                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%;">
+                    <tbody>
+                      <tr>
+
+                        <!-- LEFT COLUMN -->
+                        <td style="vertical-align:top; width:57%; padding-right:14px;">
+
+                          <!-- SEGMENT 1: Form & Call Details -->
+                          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0; width:100%; border:1px solid #d9e7e7; border-radius:12px;">
+                            <tbody>
+                              <tr>
+                                <td style="padding:0;">
+
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:12px; font-weight:700; color:#ffffff; background:#007A78; border-radius:12px 12px 0 0;">
+                                          Form &amp; Call Details
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%; font-size:13px;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Form submitter name
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left;">
+                                          @{outputs('Get_response_details')?['body/responder']}
+                                        </td>
+                                      </tr>
+
+                                      <tr style="background:#F7FBFB;">
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Date of call
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left;">
+                                          @{if(empty(outputs('Get_response_details')?['body/re469facce77445b4b414e2fdeb7d1479']),'',formatDateTime(outputs('Get_response_details')?['body/re469facce77445b4b414e2fdeb7d1479'],'dd/MM/yyyy'))}
+                                        </td>
+                                      </tr>
+
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Time phone answered
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left;">
+                                          @{outputs('Get_response_details')?['body/r4e0568f047ea4b139191076ec5fb6af4']}
+                                        </td>
+                                      </tr>
+
+                                      <tr style="background:#F7FBFB;">
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Case code
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left; font-weight:700; color:#005E5C;">
+                                          @{outputs('Compose_CaseCode')}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                          <div style="height:14px; line-height:14px;">&nbsp;</div>
+
+                          <!-- SEGMENT 2: Patient & Location Details -->
+                          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0; width:100%; border:1px solid #d9e7e7; border-radius:12px;">
+                            <tbody>
+                              <tr>
+                                <td style="padding:0;">
+
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:12px; font-weight:700; color:#ffffff; background:#007A78; border-radius:12px 12px 0 0;">
+                                          Patient &amp; Location Details
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%; font-size:13px;">
+                                    <tbody>
+                                      <tr style="background:#F7FBFB;">
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          MRN number
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left;">
+                                          @{outputs('Get_response_details')?['body/re6f51d7f48554504b0b653e046e0f290']}
+                                        </td>
+                                      </tr>
+
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Date of birth
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left;">
+                                          @{if(empty(outputs('Get_response_details')?['body/rc7606d943eca4d3aaf6299e67889b35e']),'',formatDateTime(outputs('Get_response_details')?['body/rc7606d943eca4d3aaf6299e67889b35e'],'dd/MM/yyyy'))}
+                                        </td>
+                                      </tr>
+
+                                      <tr style="background:#F7FBFB;">
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Ward / Area
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left; font-weight:700;">
+                                          @{outputs('Get_response_details')?['body/r66cf613485964d4383c8aa51890fcf75']}
+                                        </td>
+                                      </tr>
+
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Bed number
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left;">
+                                          @{outputs('Get_response_details')?['body/r5242c93b6153469a955a18eef845b123']}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                          <div style="height:14px; line-height:14px;">&nbsp;</div>
+
+                          <!-- SEGMENT 3: Caller Concern -->
+                          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0; width:100%; border:1px solid #d9e7e7; border-radius:12px;">
+                            <tbody>
+                              <tr>
+                                <td style="padding:0;">
+
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:12px; font-weight:700; color:#ffffff; background:#007A78; border-radius:12px 12px 0 0;">
+                                          Caller Concern
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%; font-size:13px;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Who made the call?
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left;">
+                                          @{outputs('Get_response_details')?['body/re71f380f7f854a7d89d4b259a20fa59b']}
+                                        </td>
+                                      </tr>
+
+                                      <tr style="background:#F7FBFB;">
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Main reason for call
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left; font-weight:700;">
+                                          @{outputs('Get_response_details')?['body/r07a6bc2130884fbdab35c6a9771103f6']}
+                                        </td>
+                                      </tr>
+
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; vertical-align:top; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Additional information
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left; white-space:pre-wrap;">
+                                          @{outputs('Get_response_details')?['body/rbf815cbaa1c240c3a6bb0b3da063d843']}
+                                        </td>
+                                      </tr>
+
+                                      <tr style="background:#F7FBFB;">
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Why did the caller use the phoneline?
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left;">
+                                          @{outputs('Get_response_details')?['body/r267fb377cf3f4dde8589f7163ac990ad']}
+                                        </td>
+                                      </tr>
+
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #C9DEDC;">
+                                          Has the caller spoken to the ward?
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left; font-weight:700;">
+                                          @{outputs('Get_response_details')?['body/r23794c7a44244c0fb226d486388fd7d2']}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                        </td>
+
+                        <!-- RIGHT COLUMN -->
+                        <td style="vertical-align:top; width:43%; padding-left:0;">
+
+                          <!-- SEGMENT 4: Triaging Output -->
+                          <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0; width:100%; border:1px solid #d9e7e7; border-radius:12px;">
+                            <tbody>
+                              <tr>
+                                <td style="padding:0;">
+
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:12px; font-weight:700; color:#ffffff; background:#007A78; border-radius:12px 12px 0 0;">
+                                          Triaging Output
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                  <!-- Assigned urgency category responsive box -->
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:18px; background:@{if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U1'),'#FFF3F3',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U2'),'#FFF8F1',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U3'),'#FFFBEA',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U4'),'#F1F8F2',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U5'),'#F1F7FF','#FFF3F3')))))}; text-align:center; border-top:1px solid #d9e7e7; border-left:2px solid @{if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U1'),'#B42318',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U2'),'#E86A10',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U3'),'#F2C94C',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U4'),'#2E7D32',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U5'),'#1565C0','#B42318')))))}; border-right:2px solid @{if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U1'),'#B42318',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U2'),'#E86A10',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U3'),'#F2C94C',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U4'),'#2E7D32',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U5'),'#1565C0','#B42318')))))};">
+                                          <div style="font-size:12px; line-height:18px; color:@{if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U1'),'#B42318',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U2'),'#E86A10',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U3'),'#B7950B',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U4'),'#2E7D32',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U5'),'#1565C0','#B42318')))))}; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">
+                                            Assigned urgency category
+                                          </div>
+
+                                          <div style="display:inline-block; margin-top:10px; padding:18px 38px; background:@{if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U1'),'#B42318',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U2'),'#E86A10',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U3'),'#F2C94C',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U4'),'#2E7D32',if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U5'),'#1565C0','#B42318')))))}; color:@{if(contains(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'],'U3'),'#1a1a1a','#ffffff')}; font-size:38px; line-height:44px; font-weight:700; border-radius:18px; letter-spacing:1px;">
+                                            @{outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297']}
+                                          </div>
+
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                  <!-- Triage decision details -->
+                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%; font-size:13px;">
+                                    <tbody>
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #d9e7e7; background:#ffffff;">
+                                          Is this call about acute deterioration?
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left; font-weight:700; background:#ffffff;">
+                                          @{outputs('Get_response_details')?['body/r39f66a7d3a6e490ca8cb00c92e987f42']}
+                                        </td>
+                                      </tr>
+
+                                      <tr>
+                                        <td style="padding:10px 12px; font-weight:700; border-top:1px solid #d9e7e7; border-right:2px solid #d9e7e7; background:#F7FBFB;">
+                                          Does this need to be seen by PERRT?
+                                        </td>
+                                        <td style="padding:10px 12px; border-top:1px solid #d9e7e7; text-align:left; font-weight:700; background:#F7FBFB;">
+                                          @{outputs('Get_response_details')?['body/r2a55ea2436a747179be777730d105534']}
+                                        </td>
+                                      </tr>
+                                    </tbody>
+                                  </table>
+
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+
+                        </td>
+
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <!-- Closing note -->
+                  <div style="margin-top:16px; padding:14px 16px; background:#F7FBFB; border:1px solid #BFDCDC; border-left:6px solid #007A78; border-radius:14px;">
+                    <p style="margin:0; font-size:13px; line-height:18px; color:#1a1a1a;">
+                      For <strong>U1</strong> and <strong>U2</strong> calls, PERRT will attend to review the patient. Once this has happened, please complete the PERRT Call Visit Log using the link below. For <strong>U3, U4 and U5</strong> calls, the concern should be reviewed and followed up by the local team as appropriate.
+                    </p>
+                  </div>
+
+                  <!-- PERRT Call Visit Log link -->
+                  <div style="margin-top:16px; padding:16px 18px; background:#FFF8F1; border:1px solid #F0CFAE; border-left:6px solid #E86A10; border-radius:14px;">
+                    <p style="margin:0 0 10px 0; font-size:14px; font-weight:700; color:#8A3A00;">
+                      PERRT call visit log
+                    </p>
+
+                    <p style="margin:0 0 14px 0; font-size:13px; line-height:18px; color:#1a1a1a;">
+                      If PERRT has visited and assessed the patient following this Martha’s Rule call, please click the link below to open the Call Visit Log. The 6-digit case code, MRN, ward/area, bed number and triage summary details will be prefilled to link the visit back to the correct Martha’s Rule call record.
+                    </p>
+
+                    <table cellpadding="0" cellspacing="0" border="0" style="margin-top:8px;">
+                      <tbody>
+                        <tr>
+                          <td>
+                            <a href="https://storage.googleapis.com/marthasrulecallclassification/triage-prototype/index.html?caseCode=@{encodeUriComponent(outputs('Compose_CaseCode'))}&amp;mrn=@{encodeUriComponent(outputs('Get_response_details')?['body/re6f51d7f48554504b0b653e046e0f290'])}&amp;visitWardArea=@{encodeUriComponent(outputs('Get_response_details')?['body/r66cf613485964d4383c8aa51890fcf75'])}&amp;visitBedNumber=@{encodeUriComponent(outputs('Get_response_details')?['body/r5242c93b6153469a955a18eef845b123'])}&amp;triageCategory=@{encodeUriComponent(outputs('Get_response_details')?['body/ra149b074a6c3473a9b8013202182b297'])}&amp;primaryConcern=@{encodeUriComponent(outputs('Get_response_details')?['body/r07a6bc2130884fbdab35c6a9771103f6'])}&amp;secondaryConcern=@{encodeUriComponent(outputs('Get_response_details')?['body/r267fb377cf3f4dde8589f7163ac990ad'])}&amp;callerConcernSummary=@{encodeUriComponent(outputs('Get_response_details')?['body/rbf815cbaa1c240c3a6bb0b3da063d843'])}" style="display:inline-block;
+                                 padding:14px 22px;
+                                 background:#E86A10;
+                                 color:#FFFFFF;
+                                 font-size:14px;
+                                 font-weight:700;
+                                 text-decoration:none;
+                                 border-radius:12px;
+                                 box-shadow:0 3px 0 #B14D00;">
+                              Open pre-filled PERRT Call Visit Log
+                            </a>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Footer -->
+                  <p style="margin:14px 0 0 0; font-size:13px; line-height:18px;">
+                    Best wishes,<br>
+                    <span style="color:#0b3d3c;">Martha’s Rule Steering Group &amp; PERRT</span>
+                  </p>
+
+                  <p style="margin:10px 0 0 0; font-size:11px; line-height:16px; color:#666666;">
+                    This email is generated automatically from a Martha’s Rule triage record. Please do not reply to this message unless you have been advised to do so.
+                  </p>
+
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+          <!-- /Container -->
+
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
