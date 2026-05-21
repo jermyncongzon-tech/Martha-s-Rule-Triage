@@ -960,6 +960,7 @@ function renderVisitLogClinicalAssessmentSection() {
     <section class="visit-log-section">
       <h3>Attendance and Clinical Assessment</h3>
       <div class="field-grid">
+        ${field("6-digit code", "visitLog.clinicalAssessment.caseCode", "text", "ABC123", "text", 6)}
         ${field("MRN number", "patient.mrn")}
         ${selectField("Ethnic group", "patient.ethnicGroup", ethnicGroupOptions, "Select ethnic group")}
         ${selectField("Ward / Area", "visitLog.location.wardArea", wardAreaOptions, "Select ward / area")}
@@ -981,6 +982,7 @@ function renderVisitLogActionsOutcomesSection() {
       <h3>Actions and Outcomes</h3>
       <div class="field-grid">
         ${checkboxGroup("PERRT actions taken", "visitLog.actionsOutcomes.perrtActionsTaken", perrtActionOptions)}
+        ${field("Total time spent managing concern [hours]", "visitLog.actionsOutcomes.totalTimeSpent", "number")}
         ${selectArrayField("Outcome(s) of call", "visitLog.actionsOutcomes.outcomes", outcomeOptions, "Select call outcome")}
       </div>
     </section>
@@ -1016,6 +1018,7 @@ function renderVisitLogReviewSection() {
       <div class="visit-review-panel">
         <div class="visit-review-grid">
           ${renderVisitReviewCard("1", "Attendance and Clinical Assessment", [
+            ["6-digit code", visit.clinicalAssessment.caseCode],
             ["MRN number", state.patient.mrn],
             ["Ward / Area", visitLogWardAreaDisplayValue()],
             ["Bed number", state.visitLog.location.bedNumber],
@@ -1027,6 +1030,7 @@ function renderVisitLogReviewSection() {
           ])}
           ${renderVisitReviewCard("2", "Actions and Outcomes", [
             ["PERRT actions taken", listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)],
+            ["Total time spent [hours]", visit.actionsOutcomes.totalTimeSpent],
             ["Outcome", listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)],
           ])}
           ${renderVisitReviewCard("3", "Call Category", [
