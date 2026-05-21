@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260521-0002";
+const APP_VERSION = "20260521-0003";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -57,6 +57,10 @@ const noticeRecipientOptions = [
   ["carla.pacheco@nhs.net", "Carla Pacheco", "NHNN Outreach", "", "nhnn"],
   ["catherine.groves@nhs.net", "Catherine Groves", "NHNN Outreach", "", "nhnn"],
   ["katie.bulpett@nhs.net", "Katie Bulpett", "NHNN Outreach", "", "nhnn"],
+  ["susan.herbert1@nhs.net", "Sue Herbert", "NHNN Outreach", "", "nhnn"],
+  ["roselyn.cruz@nhs.net", "Roselyn Cruz", "NHNN Outreach", "", "nhnn"],
+  ["charles.clements@nhs.net", "Charles Clements", "NHNN Outreach", "", "nhnn"],
+  ["roumeina.stamaria@nhs.net", "Roumeina (Yza) Santa Maria", "NHNN Outreach", "", "nhnn"],
 ];
 
 const noticeRecipientGroups = [
@@ -182,6 +186,8 @@ let emailPreviewOpen = false;
 let appModeSelected = false;
 let summaryCollapsed = true;
 let epicSummaryCollapsed = true;
+let epicCopyConfirmOpen = false;
+let epicCopyStatus = "";
 let processPosterOpen = false;
 let darkModeEnabled = false;
 let autoFillMenuOpen = false;
@@ -715,6 +721,7 @@ function renderApp() {
       ${renderWardContactModal()}
       ${renderOtherWardEmailModal()}
       ${renderNoticeRecipientModal()}
+      ${renderEpicCopyConfirmModal()}
       ${renderVisitLogHandoverBanner()}
     </div>
   `;
@@ -912,7 +919,6 @@ function isVisitLogStepComplete(stepId) {
   if (stepId === "actionsOutcomes") {
     return Boolean(
       visit.actionsOutcomes.perrtActionsTaken.length &&
-      visit.actionsOutcomes.totalTimeSpent &&
       visit.actionsOutcomes.outcomes.length
     );
   }
@@ -920,9 +926,7 @@ function isVisitLogStepComplete(stepId) {
     return visit.recategoriseCall === "no" || (visit.recategoriseCall === "yes" && triageCategoryIsComplete(visit.callCategory));
   }
   if (stepId === "learningNotifications") {
-    const learningComplete = visit.actionsOutcomes.learningIdentified === "no" ||
-      Boolean(visit.actionsOutcomes.learningIdentified && visit.actionsOutcomes.learningTheme);
-    return Boolean(learningComplete);
+    return true;
   }
   if (stepId === "visitLogActions") {
     return isVisitLogStepComplete("clinicalAssessment") &&
@@ -950,7 +954,6 @@ function renderVisitLogClinicalAssessmentSection() {
     <section class="visit-log-section">
       <h3>Attendance and Clinical Assessment</h3>
       <div class="field-grid">
-        ${field("6-digit code", "visitLog.clinicalAssessment.caseCode", "text", "ABC123", "text", 6)}
         ${field("MRN number", "patient.mrn")}
         ${selectField("Ethnic group", "patient.ethnicGroup", ethnicGroupOptions, "Select ethnic group")}
         ${selectField("Ward / Area", "visitLog.location.wardArea", wardAreaOptions, "Select ward / area")}
@@ -972,7 +975,6 @@ function renderVisitLogActionsOutcomesSection() {
       <h3>Actions and Outcomes</h3>
       <div class="field-grid">
         ${checkboxGroup("PERRT actions taken", "visitLog.actionsOutcomes.perrtActionsTaken", perrtActionOptions)}
-        ${field("Total time spent managing concern [hours]", "visitLog.actionsOutcomes.totalTimeSpent", "number")}
         ${selectArrayField("Outcome(s) of call", "visitLog.actionsOutcomes.outcomes", outcomeOptions, "Select call outcome")}
       </div>
     </section>
@@ -984,14 +986,7 @@ function renderVisitLogLearningNotificationsSection() {
     <section class="visit-log-section">
       <h3>Learning and Notifications</h3>
       <div class="field-grid">
-        ${radioGroup("Learning identified?", "visitLog.actionsOutcomes.learningIdentified", [["yes", "Yes"], ["no", "No"], ["pending", "Pending"]])}
-        ${state.visitLog.actionsOutcomes.learningIdentified && state.visitLog.actionsOutcomes.learningIdentified !== "no" ? `
-          ${selectField("Learning theme", "visitLog.actionsOutcomes.learningTheme", learningThemeOptions, "Select learning theme")}
-          ${textarea("Feedback / learning notes", "visitLog.actionsOutcomes.feedbackLearningNotes")}
-        ` : ""}
-        <div class="field-note">
-          By default, this call visit log will be sent to managers and matrons.
-        </div>
+        <div class="field-note">No additional learning or notification fields are required for this version.</div>
       </div>
     </section>
   `;
@@ -1008,7 +1003,6 @@ function renderVisitLogReviewSection() {
       <div class="visit-review-panel">
         <div class="visit-review-grid">
           ${renderVisitReviewCard("1", "Attendance and Clinical Assessment", [
-            ["6-digit code", visit.clinicalAssessment.caseCode],
             ["MRN number", state.patient.mrn],
             ["Ward / Area", visitLogWardAreaDisplayValue()],
             ["Bed number", state.visitLog.location.bedNumber],
@@ -1020,7 +1014,6 @@ function renderVisitLogReviewSection() {
           ])}
           ${renderVisitReviewCard("2", "Actions and Outcomes", [
             ["PERRT actions taken", listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)],
-            ["Total time spent [hours]", visit.actionsOutcomes.totalTimeSpent],
             ["Outcome", listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)],
           ])}
           ${renderVisitReviewCard("3", "Call Category", [
@@ -1033,9 +1026,7 @@ function renderVisitLogReviewSection() {
             ] : []),
           ])}
           ${renderVisitReviewCard("4", "Learning and Notifications", [
-            ["Learning identified", learningStatusLabel()],
-            ["Learning theme", visit.actionsOutcomes.learningTheme],
-            ["Feedback / learning notes", visit.actionsOutcomes.feedbackLearningNotes],
+            ["Status", "No additional fields required"],
           ])}
         </div>
         <div class="route-actions">
@@ -1147,22 +1138,63 @@ function repeatCallUpdateIsComplete() {
 }
 
 function renderGeneratedOutputs() {
+  const summaryMrn = activeTab === "visitLog" ? state.patient.mrn : (isRepeatOnlyMode() ? state.repeatCallUpdate.mrn : state.patient.mrn);
   return `
     ${state.generatedSummaryHtml ? `
       <section class="generated-summary rich-summary-panel">
         <div class="rich-summary-heading">
-          <h3>Generated structured summary for Epic</h3>
-          <button class="summary-toggle" type="button" data-action="toggle-epic-summary">${epicSummaryCollapsed ? "Show" : "Hide"}</button>
+          <div>
+            <h3>Generated structured summary for Epic</h3>
+            <p>Epic-ready note format with MRN safety check before copy.</p>
+          </div>
+          <div class="rich-summary-toolbar">
+            ${epicCopyStatus ? `<span class="copy-status-badge">${escapeHtml(epicCopyStatus)}</span>` : ""}
+            <button class="summary-toggle" type="button" data-action="toggle-epic-summary">${epicSummaryCollapsed ? "Show" : "Hide"}</button>
+            <button class="btn primary epic-copy-button" type="button" data-action="open-epic-copy">Copy for Epic</button>
+          </div>
+        </div>
+        <div class="epic-copy-warning">
+          You are copying this record into Epic. Please confirm the patient MRN matches before pasting.
+          <strong>${escapeHtml(summaryMrn || "MRN not entered")}</strong>
         </div>
         ${epicSummaryCollapsed ? `
           <p class="rich-summary-collapsed-note">Epic summary is ready.</p>
         ` : `
-          <div class="rich-summary" contenteditable="true" aria-label="Copyable rich structured summary">
+          <div class="rich-summary" contenteditable="true" aria-label="Copyable rich structured summary" data-epic-summary="true">
             ${state.generatedSummaryHtml}
           </div>
         `}
       </section>
     ` : ""}
+  `;
+}
+
+function renderEpicCopyConfirmModal() {
+  if (!epicCopyConfirmOpen) return "";
+  const summaryMrn = activeTab === "visitLog" ? state.patient.mrn : (isRepeatOnlyMode() ? state.repeatCallUpdate.mrn : state.patient.mrn);
+  return `
+    <div class="modal-backdrop">
+      <section class="epic-copy-modal" role="dialog" aria-modal="true" aria-labelledby="epic-copy-title">
+        <div class="modal-header">
+          <div>
+            <h2 id="epic-copy-title">Copy record to Epic</h2>
+            <p>Please make sure this record belongs to the correct patient before you paste it into Epic.</p>
+          </div>
+          <button class="btn secondary modal-close" type="button" data-action="close-epic-copy" aria-label="Close Epic copy warning">Close</button>
+        </div>
+        <div class="epic-copy-modal-body">
+          <div class="epic-copy-modal-mrn">
+            <span>Patient MRN</span>
+            <strong>${escapeHtml(summaryMrn || "MRN not entered")}</strong>
+          </div>
+          <p>This will copy the current Epic summary to your clipboard. Please verify the MRN and patient context before pasting.</p>
+        </div>
+        <div class="email-preview-actions">
+          <button class="btn secondary" type="button" data-action="close-epic-copy">Cancel</button>
+          <button class="btn primary epic-copy-button" type="button" data-action="confirm-epic-copy">Copy summary</button>
+        </div>
+      </section>
+    </div>
   `;
 }
 
@@ -2014,6 +2046,48 @@ function renderEmailPreviewModal() {
   `;
 }
 
+function epicSummaryMrnValue() {
+  if (activeTab === "visitLog") return state.patient.mrn || "";
+  if (isRepeatOnlyMode()) return state.repeatCallUpdate.mrn || "";
+  return state.patient.mrn || "";
+}
+
+function epicSummaryClipboardPayload() {
+  const summaryElement = document.querySelector("[data-epic-summary='true']");
+  const html = summaryElement ? summaryElement.innerHTML.trim() : state.generatedSummaryHtml;
+  const text = summaryElement ? summaryElement.innerText.trim() : state.generatedSummary.trim();
+  return { html, text };
+}
+
+async function copyEpicSummaryToClipboard() {
+  const { html, text } = epicSummaryClipboardPayload();
+  if (!text) throw new Error("No summary available");
+
+  if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write && html) {
+    const item = new ClipboardItem({
+      "text/plain": new Blob([text], { type: "text/plain" }),
+      "text/html": new Blob([html], { type: "text/html" }),
+    });
+    await navigator.clipboard.write([item]);
+    return;
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const fallback = document.createElement("textarea");
+  fallback.value = text;
+  fallback.style.position = "fixed";
+  fallback.style.opacity = "0";
+  document.body.appendChild(fallback);
+  fallback.focus();
+  fallback.select();
+  document.execCommand("copy");
+  fallback.remove();
+}
+
 function summaryRow(label, value) {
   return `<div class="summary-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
 }
@@ -2664,7 +2738,7 @@ function callerTypeFormLabel() {
 
 function warningSignsFormDetail(category = activeFormCategory()) {
   const warningSigns = (category.redFlags || []).filter((item) => item !== "none");
-  if (!warningSigns.length) return "No warning signs selected";
+  if (!warningSigns.length) return "None";
   const labels = warningSigns.map((value) => optionLabel(redFlagOptions, value));
   if (category.otherRedFlagText) labels.push(`Other detail: ${category.otherRedFlagText}`);
   return labels.join(" | ");
@@ -2674,6 +2748,11 @@ function categoryOfCallLabel(category = activeFormCategory()) {
   const isAcute = category.acuteDeterioration === "yes" || category.acuteDeterioration === "unsure" || hasSelectedWarningSigns(category);
   if (!isAcute) return "Non-Acute Deterioration";
   return `Acute Deterioration; Warning signs=${warningSignsFormDetail(category)}`;
+}
+
+function shouldShowWarningSignDetails(category = activeFormCategory()) {
+  const urgency = calculateUrgencyFromCategory(category);
+  return urgency === "U1_immediate_emergency" || urgency === "U2_same_day_clinical";
 }
 
 function coreConcernFormLabel(category = activeFormCategory()) {
@@ -2885,15 +2964,14 @@ function generateStructuredSummary() {
       ? `The call was re-categorised as ${categoryDisplayLabel(calculateUrgencyFromCategory(category))}. Category detail: ${categoryOfCallLabel(category)}. Core concern: ${primaryConcernFormValueForCategory(category) || "not entered"}. Secondary concern: ${secondaryConcernFormValueForCategory(category) || "not entered"}. Ward contact status: ${wardContactLabel(category.wardContact)}.`
       : `The call was not re-categorised in this visit log.`;
 
-    state.generatedSummary = `Martha's Rule call visit log${visit.clinicalAssessment.caseCode ? ` for 6-digit code ${visit.clinicalAssessment.caseCode}` : ""} for MRN ${valueOr(state.patient.mrn)}, located on ${valueOr(visitLogWardAreaDisplayValue())}${state.visitLog.location.bedNumber ? `, bed ${state.visitLog.location.bedNumber}` : ""}. Ethnic group recorded as ${valueOr(state.patient.ethnicGroup)}. Date of visit was ${valueOr(visit.dateOfVisit)} and PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}.
+    state.generatedSummary = `Martha's Rule call visit log for MRN ${valueOr(state.patient.mrn)}, located on ${valueOr(visitLogWardAreaDisplayValue())}${state.visitLog.location.bedNumber ? `, bed ${state.visitLog.location.bedNumber}` : ""}. Ethnic group recorded as ${valueOr(state.patient.ethnicGroup)}. Date of visit was ${valueOr(visit.dateOfVisit)} and PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}.
 
 Clinical assessment: NEWS2 at time of call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}.
 
-Actions and outcomes: Actions taken were ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcome recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}. Total time spent managing the concern was ${valueOr(visit.actionsOutcomes.totalTimeSpent)} hour(s).
+Actions and outcomes: Actions taken were ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcome recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}.
 
 Call category: ${categoryText}
-
-Learning and notifications: Learning status was ${valueOr(learningStatusLabel(), "not selected")}${visit.actionsOutcomes.learningTheme ? `, theme: ${visit.actionsOutcomes.learningTheme}` : ""}. Feedback / learning notes: ${valueOr(visit.actionsOutcomes.feedbackLearningNotes)}. Default notification recipients are managers and matrons.`;
+`;
     state.generatedSummaryHtml = buildVisitLogStructuredSummaryHtml();
     return;
   }
@@ -2924,15 +3002,16 @@ Learning and notifications: Learning status was ${valueOr(learningStatusLabel(),
     visit.notifications.otherEmails
   );
 
+  const warningDetails = shouldShowWarningSignDetails(category) ? ` Red flags recorded: ${listLabels(redFlagOptions, category.redFlags)}${category.otherRedFlagText ? `; other warning sign: ${category.otherRedFlagText}` : ""}.` : "";
   state.generatedSummary = `A Martha's Rule call was answered on ${valueOr(state.callDetails.dateOfReferral)} at ${valueOr(state.callDetails.timePhoneAnswered)} by a caller recorded as ${callerType}. Repeat-call status was ${valueOr(state.callDetails.repeatCall, "not selected")}. The patient details recorded were ${patientDetails}. The patient was located at ${locationDetails}.
 
 Category: ${categoryDisplayLabel(urgency)}${state.visitLog.recategoriseCall === "yes" ? ` (re-categorised in visit log from ${categoryDisplayLabel(originalUrgency)})` : ""}. Suggested route: ${route}. Recommended action: ${action.instruction}
 
-The core concern was ${concern}. Red flags recorded: ${listLabels(redFlagOptions, category.redFlags)}${category.otherRedFlagText ? `; other warning sign: ${category.otherRedFlagText}` : ""}. Secondary concerns recorded: ${secondaryConcerns}. ${genuineWorrySummaryLabel(category) ? `Genuine worry follow-up: ${genuineWorrySummaryLabel(category)}. ` : ""}Ward contact status was ${wardContactLabel(category.wardContact)}.
+The core concern was ${concern}.${warningDetails} Secondary concerns recorded: ${secondaryConcerns}. Ward contact status was ${wardContactLabel(category.wardContact)}.
 
 The caller's main concern was summarised as: ${valueOr(state.concernSummary.concernsSummary)}.${hasVisitLog ? `
 
-Visit log: Date of visit was ${valueOr(visit.dateOfVisit)}. PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}. NEWS2 at call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}. Actions taken: ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcomes recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}. Total time spent was ${valueOr(visit.actionsOutcomes.totalTimeSpent)} hour(s). Learning status was ${valueOr(learningStatusLabel(), "not selected")}${visit.actionsOutcomes.learningTheme ? `, theme: ${visit.actionsOutcomes.learningTheme}` : ""}. Feedback / learning notes: ${valueOr(visit.actionsOutcomes.feedbackLearningNotes)}. Notification recipients: ${notificationFormValue()}.` : ""}`;
+Visit log: Date of visit was ${valueOr(visit.dateOfVisit)}. PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}. NEWS2 at call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}. Actions taken: ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcomes recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}.` : ""}`;
   state.generatedSummaryHtml = buildStructuredSummaryHtml();
 }
 
@@ -2986,6 +3065,7 @@ function buildStructuredSummaryHtml() {
 
   const urgency = activeFormUrgency();
   const category = activeFormCategory();
+  const includeWarningDetails = shouldShowWarningSignDetails(category);
   const visit = state.visitLog;
   const hasVisitLog = Boolean(
     visit.dateOfVisit ||
@@ -3023,33 +3103,25 @@ function buildStructuredSummaryHtml() {
       ${summarySectionHtml("Caller Concern", [
         summaryRowHtml("Main reason for call", primaryConcernFormValueForCategory(category)),
         summaryRowHtml("Caller concern summary", state.concernSummary.concernsSummary),
-        summaryRowHtml("Red flags recorded", listLabels(redFlagOptions, category.redFlags)),
-        summaryRowHtml("Other warning sign", category.otherRedFlagText),
+        ...(includeWarningDetails ? [summaryRowHtml("Red flags recorded", listLabels(redFlagOptions, category.redFlags))] : []),
+        ...(includeWarningDetails && category.otherRedFlagText ? [summaryRowHtml("Other warning sign", category.otherRedFlagText)] : []),
         summaryRowHtml("Why did the caller use the phoneline?", secondaryConcernFormValueForCategory(category)),
-        summaryRowHtml("Genuine worry follow-up", genuineWorrySummaryLabel(category)),
         summaryRowHtml("Has the caller spoken to the ward?", wardContactLabel(category.wardContact)),
       ])}
       ${summarySectionHtml("Triage Output", [
+        summaryRowHtml("Category of call", categoryOfCallLabel(category)),
         summaryRowHtml("Assigned urgency category", categoryDisplayLabel(urgency)),
         summaryRowHtml("Suggested route", calculateRoute(urgency)),
         summaryRowHtml("Recommended action", triageActionDetail(urgency).instruction),
-        summaryRowHtml("Category of call", categoryOfCallLabel(category)),
-        summaryRowHtml("Does PERRT need to see this patient?", sameDayReviewFormLabel(category)),
       ])}
       ${hasVisitLog ? summarySectionHtml("Visit Log", [
         summaryRowHtml("Date of visit", formatDateForEmail(visit.dateOfVisit)),
-        summaryRowHtml("6-digit code", visit.clinicalAssessment.caseCode),
         summaryRowHtml("Time of PERRT/Outreach attendance", visit.timeOfAttendance),
         summaryRowHtml("NEWS2 at time of call", visit.clinicalAssessment.news2AtCall),
         summaryRowHtml("NEWS2 at time of attendance", visit.clinicalAssessment.news2AtAttendance),
         summaryRowHtml("Additional clinical notes", visit.clinicalAssessment.additionalClinicalNotes),
         summaryRowHtml("PERRT actions taken", listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)),
         summaryRowHtml("Outcomes recorded", listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)),
-        summaryRowHtml("Total time spent managing concern [hours]", visit.actionsOutcomes.totalTimeSpent),
-        summaryRowHtml("Learning status", learningStatusLabel()),
-        summaryRowHtml("Learning theme", visit.actionsOutcomes.learningTheme),
-        summaryRowHtml("Feedback / learning notes", visit.actionsOutcomes.feedbackLearningNotes),
-        summaryRowHtml("Notification recipients", notificationFormValue()),
       ]) : ""}
     </div>`;
 }
@@ -3064,7 +3136,6 @@ function buildVisitLogStructuredSummaryHtml() {
     <div style="font-family:Arial, Helvetica, sans-serif; color:#111827; line-height:1.35;">
       <h2 style="margin:0 0 8px; color:#003F3D; font-size:18px;">Martha's Rule Call Visit Log Summary</h2>
       ${summarySectionHtml("Attendance and Clinical Assessment", [
-        summaryRowHtml("6-digit code", visit.clinicalAssessment.caseCode),
         summaryRowHtml("MRN number", state.patient.mrn),
         summaryRowHtml("Ethnic group", state.patient.ethnicGroup),
         summaryRowHtml("Ward / Area", visitLogWardAreaDisplayValue()),
@@ -3077,7 +3148,6 @@ function buildVisitLogStructuredSummaryHtml() {
       ])}
       ${summarySectionHtml("Actions and Outcomes", [
         summaryRowHtml("PERRT actions taken", listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)),
-        summaryRowHtml("Total time spent managing concern [hours]", visit.actionsOutcomes.totalTimeSpent),
         summaryRowHtml("Outcome of call", listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)),
       ])}
       ${summarySectionHtml("Call Category", [
@@ -3091,10 +3161,7 @@ function buildVisitLogStructuredSummaryHtml() {
         ] : []),
       ])}
       ${summarySectionHtml("Learning and Notifications", [
-        summaryRowHtml("Learning identified", learningStatusLabel()),
-        summaryRowHtml("Learning theme", visit.actionsOutcomes.learningTheme),
-        summaryRowHtml("Feedback / learning notes", visit.actionsOutcomes.feedbackLearningNotes),
-        summaryRowHtml("Default notification recipients", "Managers; Matrons"),
+        summaryRowHtml("Status", "No additional fields required"),
       ])}
     </div>`;
 }
@@ -3330,7 +3397,6 @@ function buildVisitLogEmailHtml() {
               <tr>
                 <td style="background:#ffffff; border:1px solid #d9e7e7; border-top:none; padding:16px 20px 18px 20px; border-radius:0 0 12px 12px;">
 ${emailSegment("Attendance and Clinical Assessment", [
-  emailRow("6-digit code", visit.clinicalAssessment.caseCode),
   emailRow("MRN number", state.patient.mrn, true, { strong: true }),
   emailRow("Ward", visitLogWardAreaDisplayValue()),
   emailRow("Date of visit", formatDateForEmail(visit.dateOfVisit), true),
@@ -3342,15 +3408,11 @@ ${emailSegment("Attendance and Clinical Assessment", [
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
 ${emailSegment("Actions and Outcomes", [
   emailRow("PERRT actions taken", listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken), true, { vertical: true, wrap: true }),
-  emailRow("Total time spent managing concern [hours]", visit.actionsOutcomes.totalTimeSpent),
   emailRow("Outcome of call", listLabels(outcomeOptions, visit.actionsOutcomes.outcomes), true, { vertical: true, wrap: true }),
 ])}
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
 ${emailSegment("Learning and Notifications", [
-  emailRow("Learning identified?", learningStatusLabel(), true),
-  emailRow("Learning theme", visit.actionsOutcomes.learningTheme),
-  emailRow("Feedback / learning notes", visit.actionsOutcomes.feedbackLearningNotes, true, { vertical: true, wrap: true }),
-  emailRow("Default notification recipients", "Managers; Matrons"),
+  emailRow("Status", "No additional fields required", true),
   emailRow("Submitted by", "Generated from visit log app", true),
 ])}
                   <p style="margin:14px 0 0 0; font-size:13px; line-height:18px;">Best wishes,<br><span style="color:#0b3d3c;">Martha's Rule Steering Group &amp; PERRT</span></p>
@@ -3458,7 +3520,9 @@ ${emailSegment("Caller Concern", [
                                       </tr>
                                       <tr>
                                         <td style="padding:18px; background:${colours.bg}; text-align:center; border-top:1px solid #d9e7e7; border-left:2px solid ${colours.accent}; border-right:2px solid ${colours.accent};">
-                                          <div style="font-size:12px; line-height:18px; color:${colours.label}; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Assigned urgency category</div>
+                                          <div style="font-size:12px; line-height:18px; color:${colours.label}; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Category of call</div>
+                                          <div style="font-size:14px; line-height:20px; color:${colours.label}; font-weight:700; margin-top:6px;">${emailCell(categoryOfCallLabel(category))}</div>
+                                          <div style="font-size:12px; line-height:18px; color:${colours.label}; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-top:10px;">Assigned urgency category</div>
                                           <div style="display:inline-block; margin-top:10px; padding:18px 38px; background:${colours.accent}; color:${colours.text}; font-size:38px; line-height:44px; font-weight:700; border-radius:18px; letter-spacing:1px;">${emailCell(triageCategory, categoryDisplayLabel(urgency))}</div>
                                         </td>
                                       </tr>
@@ -3467,7 +3531,6 @@ ${emailSegment("Caller Concern", [
                                   <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%; font-size:13px;">
                                     <tbody>
 ${emailRow("Is this call about acute deterioration?", categoryOfCallLabel(category), false, { strong: true })}
-${emailRow("Does this need to be seen by PERRT?", sameDayReviewFormLabel(category), true, { strong: true })}
                                     </tbody>
                                   </table>
 ${urgencyGuideEmailHtml()}
@@ -3563,19 +3626,13 @@ function buildCsvRows() {
     ["Triage", "Core concern", primaryConcernFormValueForCategory(category)],
     ["Triage", "Same-day clinical review", category.sameDayReview],
     ["Triage", "Secondary concerns", secondaryConcernFormValueForCategory(category)],
-    ["Triage", "Genuine worry follow-up", genuineWorrySummaryLabel(category)],
     ["Triage", "Ward contacted", wardContactLabel(category.wardContact)],
     ["Concern summary", "Concerns raised by caller", state.concernSummary.concernsSummary],
-    ["Clinical assessment", "6-digit code", state.visitLog.clinicalAssessment.caseCode],
     ["Clinical assessment", "NEWS2 at time of call", state.visitLog.clinicalAssessment.news2AtCall],
     ["Clinical assessment", "NEWS2 at time of attendance", state.visitLog.clinicalAssessment.news2AtAttendance],
     ["Clinical assessment", "Additional clinical notes", state.visitLog.clinicalAssessment.additionalClinicalNotes],
     ["Actions and outcomes", "PERRT actions taken", listLabels(perrtActionOptions, state.visitLog.actionsOutcomes.perrtActionsTaken)],
-    ["Actions and outcomes", "Total time spent managing concern [hours]", state.visitLog.actionsOutcomes.totalTimeSpent],
     ["Actions and outcomes", "Outcomes", listLabels(outcomeOptions, state.visitLog.actionsOutcomes.outcomes)],
-    ["Learning", "Learning identified", state.visitLog.actionsOutcomes.learningIdentified],
-    ["Learning", "Learning theme", state.visitLog.actionsOutcomes.learningTheme],
-    ["Learning", "Feedback / learning notes", state.visitLog.actionsOutcomes.feedbackLearningNotes],
     ["Notifications", "Additional recipients", state.visitLog.notifications.otherEmails],
     ["Notifications", "Other emails", state.visitLog.notifications.otherEmails],
   ];
@@ -4140,6 +4197,7 @@ app.addEventListener("click", (event) => {
     otherWardEmailModalOpen = false;
     otherWardEmailOpenFormAfterSave = false;
     noticeRecipientModalOpen = false;
+    epicCopyConfirmOpen = false;
     renderApp();
     return;
   }
@@ -4209,6 +4267,12 @@ app.addEventListener("click", (event) => {
   if (action === "close-notice-recipient-modal") {
     noticeRecipientModalOpen = false;
   }
+  if (action === "open-epic-copy") {
+    epicCopyConfirmOpen = true;
+  }
+  if (action === "close-epic-copy") {
+    epicCopyConfirmOpen = false;
+  }
   if (action === "complete-other-ward-email") {
     if (!otherWardRecipientEmailValue().trim()) return;
     const shouldOpenForm = otherWardEmailOpenFormAfterSave;
@@ -4267,6 +4331,7 @@ app.addEventListener("click", (event) => {
   if (action === "generate") {
     generateStructuredSummary();
     epicSummaryCollapsed = false;
+    epicCopyStatus = "";
   }
   if (action === "preview-email") generateHtmlEmail();
   if (action === "open-ms-form") openPrefilledMicrosoftForm();
@@ -4286,6 +4351,20 @@ app.addEventListener("click", (event) => {
   }
   if (action === "toggle-epic-summary") {
     epicSummaryCollapsed = !epicSummaryCollapsed;
+  }
+  if (action === "confirm-epic-copy") {
+    copyEpicSummaryToClipboard()
+      .then(() => {
+        epicCopyConfirmOpen = false;
+        epicCopyStatus = `Copied for MRN ${epicSummaryMrnValue() || "not entered"}`;
+        renderApp();
+      })
+      .catch(() => {
+        epicCopyConfirmOpen = false;
+        epicCopyStatus = "Copy failed - please copy manually";
+        renderApp();
+      });
+    return;
   }
   if (action === "open-urgency-guide") {
     urgencyGuideOpen = true;
@@ -4365,6 +4444,12 @@ app.addEventListener("keydown", (event) => {
 
   if (event.key === "Escape" && noticeRecipientModalOpen) {
     noticeRecipientModalOpen = false;
+    renderApp();
+    return;
+  }
+
+  if (event.key === "Escape" && epicCopyConfirmOpen) {
+    epicCopyConfirmOpen = false;
     renderApp();
     return;
   }
