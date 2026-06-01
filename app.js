@@ -29,7 +29,7 @@ const noticeRecipientOptions = [
   ["bernardo.hernandez@nhs.net", "Bernardo Hernandez", "Senior Nurse PERRT", "", "senior"],
   ["eldaissa.perez@nhs.net", "Elda Issa Perez", "Senior Nurse PERRT", "", "senior"],
   ["lily.capilli@nhs.net", "Lily Capilli", "Senior Nurse PERRT", "", "senior"],
-  ["alistair.sim@nhs.net", "Alistair Sim", "NHNN senior nurse outreach", "", "senior"],
+  ["alistair.sim@nhs.net", "Alistair Sim", "Senior nurse", "", "senior"],
   ["daniel.antunes@nhs.net", "Daniel Antunes", "PERRT nurse", "", "nurse"],
   ["adrian.ballester@nhs.net", "Adrian Ballester", "PERRT nurse", "", "nurse"],
   ["fatima.bolon-rodriguez@nhs.net", "Fatima Bolon-Rodriguez", "PERRT nurse", "", "nurse"],
@@ -197,6 +197,7 @@ let otherWardEmailModalOpen = false;
 let otherWardEmailOpenFormAfterSave = false;
 let noticeRecipientModalOpen = false;
 let pendingNoticeRecipientScrollTop = null;
+let noticeRecipientBranchState = { uch: false, nhnn: false };
 let handoverWindowPosition = { x: null, y: null };
 let handoverDragState = null;
 let handoverWindowMinimized = false;
@@ -1552,6 +1553,22 @@ function renderNoticeRecipientModal() {
     groups[group].push(recipient);
     return groups;
   }, {});
+  const lead = (recipientsByGroup.lead || [])[0];
+  const uchSeniors = (recipientsByGroup.senior || []).filter(([email]) => email !== "alistair.sim@nhs.net");
+  const nhnnLead = (recipientsByGroup.senior || []).find(([email]) => email === "alistair.sim@nhs.net");
+  const uchNurses = recipientsByGroup.nurse || [];
+  const nhnnNurses = recipientsByGroup.nhnn || [];
+
+  const renderRecipient = ([email, name, role, status], tone = "orange") => {
+    const unavailable = status === "unavailable";
+    return `
+      <button class="recipient-option recipient-option-${tone} ${selected.has(email) ? "selected" : ""} ${unavailable ? "unavailable" : ""}" type="button" data-action="toggle-notice-recipient" data-email="${escapeHtml(email)}" aria-pressed="${selected.has(email) ? "true" : "false"}" ${unavailable ? "disabled aria-disabled=\"true\"" : ""}>
+        <span class="recipient-name">${escapeHtml(name)}</span>
+        <span class="recipient-role">${escapeHtml(role)}</span>
+        <span class="recipient-email">${escapeHtml(email)}</span>
+      </button>
+    `;
+  };
 
   return `
     <div class="modal-backdrop">
@@ -1570,30 +1587,63 @@ function renderNoticeRecipientModal() {
           <div class="notice">
             Who should this notice go to apart from the PERRT shared email?
           </div>
-          <div class="notice-recipient-options">
-            ${noticeRecipientGroups.map((group) => {
-              const recipients = recipientsByGroup[group.key] || [];
-              if (!recipients.length) return "";
-              return `
-                <section class="recipient-group recipient-group-${group.tone}">
-                  <div class="recipient-group-header">
-                    <strong>${escapeHtml(group.title)}</strong>
-                  </div>
+          <div class="recipient-hierarchy">
+            ${lead ? `
+              <div class="recipient-center">
+                <div class="recipient-center-label">PERRT lead</div>
+                <div class="recipient-center-node">
+                  ${renderRecipient(lead, "green")}
+                </div>
+              </div>
+            ` : ""}
+
+            <div class="recipient-branches">
+              <button class="recipient-branch recipient-branch-purple ${noticeRecipientBranchState.uch ? "open" : ""}" type="button" data-action="toggle-notice-branch" data-branch="uch" aria-expanded="${noticeRecipientBranchState.uch ? "true" : "false"}">
+                UCH / GWB / WMS
+              </button>
+              <button class="recipient-branch recipient-branch-cyan ${noticeRecipientBranchState.nhnn ? "open" : ""}" type="button" data-action="toggle-notice-branch" data-branch="nhnn" aria-expanded="${noticeRecipientBranchState.nhnn ? "true" : "false"}">
+                NHNN Outreach
+              </button>
+            </div>
+            <div class="recipient-branch-hint">Select one branch to view and choose recipients.</div>
+
+            ${noticeRecipientBranchState.uch ? `
+              <section class="recipient-panel recipient-panel-purple">
+                <div class="recipient-panel-title">UCH / GWB / WMS hierarchy</div>
+                <div class="recipient-subpanel">
+                  <h4>Senior nurses</h4>
                   <div class="recipient-group-list">
-                    ${recipients.map(([email, name, role, status]) => {
-                      const unavailable = status === "unavailable";
-                      return `
-                        <button class="recipient-option ${selected.has(email) ? "selected" : ""} ${unavailable ? "unavailable" : ""}" type="button" data-action="toggle-notice-recipient" data-email="${escapeHtml(email)}" aria-pressed="${selected.has(email) ? "true" : "false"}" ${unavailable ? "disabled aria-disabled=\"true\"" : ""}>
-                          <span class="recipient-name">${escapeHtml(name)}</span>
-                          <span class="recipient-role">${escapeHtml(role)}</span>
-                          <span class="recipient-email">${escapeHtml(email)}</span>
-                        </button>
-                      `;
-                    }).join("")}
+                    ${uchSeniors.map((recipient) => renderRecipient(recipient, "purple")).join("")}
                   </div>
-                </section>
-              `;
-            }).join("")}
+                </div>
+                <div class="recipient-subpanel">
+                  <h4>PERRT nurses</h4>
+                  <div class="recipient-group-list">
+                    ${uchNurses.map((recipient) => renderRecipient(recipient, "orange")).join("")}
+                  </div>
+                </div>
+              </section>
+            ` : ""}
+
+            ${noticeRecipientBranchState.nhnn ? `
+              <section class="recipient-panel recipient-panel-cyan">
+                <div class="recipient-panel-title">NHNN Outreach hierarchy</div>
+                ${nhnnLead ? `
+                  <div class="recipient-subpanel">
+                    <h4>Senior nurse</h4>
+                    <div class="recipient-group-list">
+                      ${renderRecipient(nhnnLead, "purple")}
+                    </div>
+                  </div>
+                ` : ""}
+                <div class="recipient-subpanel">
+                  <h4>NHNN Outreach nurses</h4>
+                  <div class="recipient-group-list">
+                    ${nhnnNurses.map((recipient) => renderRecipient(recipient, "cyan")).join("")}
+                  </div>
+                </div>
+              </section>
+            ` : ""}
           </div>
         </div>
         <div class="notice-recipient-actions">
@@ -2939,6 +2989,7 @@ function openPrefilledMicrosoftForm() {
     return;
   }
   if (activeTab !== "visitLog") {
+    noticeRecipientBranchState = { uch: false, nhnn: false };
     noticeRecipientModalOpen = true;
     renderApp();
     return;
@@ -2959,6 +3010,7 @@ function openPrefilledMicrosoftFormWithoutPrompt() {
     return;
   }
   if (activeTab !== "visitLog") {
+    noticeRecipientBranchState = { uch: false, nhnn: false };
     noticeRecipientModalOpen = true;
     renderApp();
     return;
@@ -4285,6 +4337,7 @@ app.addEventListener("click", (event) => {
   }
   if (action === "close-notice-recipient-modal") {
     noticeRecipientModalOpen = false;
+    noticeRecipientBranchState = { uch: false, nhnn: false };
   }
   if (action === "open-epic-copy") {
     epicCopyConfirmOpen = true;
@@ -4318,8 +4371,19 @@ app.addEventListener("click", (event) => {
     }
     state.triage.noticeRecipients = Array.from(recipients);
   }
+  if (action === "toggle-notice-branch") {
+    const noticeBody = document.querySelector(".notice-recipient-body");
+    pendingNoticeRecipientScrollTop = noticeBody ? noticeBody.scrollTop : null;
+    const branch = target.dataset.branch;
+    if (branch === "uch" || branch === "nhnn") {
+      const nextOpen = !noticeRecipientBranchState[branch];
+      noticeRecipientBranchState = { uch: false, nhnn: false };
+      noticeRecipientBranchState[branch] = nextOpen;
+    }
+  }
   if (action === "complete-notice-recipient") {
     noticeRecipientModalOpen = false;
+    noticeRecipientBranchState = { uch: false, nhnn: false };
     const formUrl = buildMicrosoftFormUrl();
     window.open(formUrl, "_blank", "noopener,noreferrer");
   }
