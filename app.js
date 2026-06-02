@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260602-0004";
+const APP_VERSION = "20260602-0005";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -738,7 +738,7 @@ function renderStartView() {
             <button class="theme-toggle-button theme-toggle-compact" type="button" data-action="toggle-theme">${darkModeEnabled ? "Light" : "Dark"}</button>
           </div>
           <div>
-            <p class="start-app-title">Martha's Rule Call Triage and Visit Log</p>
+            <p class="start-app-title">Martha's Rule Call Triage and Patient Review Log</p>
             ${renderVersionControl("start")}
           </div>
           <div class="start-header-actions">
@@ -792,7 +792,7 @@ function renderHeader() {
         <button class="theme-toggle-button theme-toggle-compact" type="button" data-action="toggle-theme">${darkModeEnabled ? "Light" : "Dark"}</button>
       </div>
       <div class="app-title-block">
-        <h1>Martha's Rule Call Triage and Visit Log</h1>
+        <h1>Martha's Rule Call Triage and Patient Review Log</h1>
         ${renderVersionControl("app")}
       </div>
       <div class="header-progress">
@@ -3230,9 +3230,6 @@ function buildVisitLogStructuredSummaryHtml() {
           summaryRowHtml("Secondary concern", secondaryConcernFormValueForCategory(category)),
           summaryRowHtml("Has the caller spoken to the ward?", wardContactLabel(category.wardContact)),
         ] : []),
-      ])}
-      ${summarySectionHtml("Learning and Notifications", [
-        summaryRowHtml("Status", "No additional fields required"),
       ])}
     </div>`;
 }
