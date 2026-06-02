@@ -642,6 +642,77 @@ body.dark-mode .email-preview-modal {
   color: #e2e8f0;
 }
 
+body.dark-mode .notice-recipient-actions,
+body.dark-mode .email-preview-actions {
+  background: #111827;
+  border-top-color: #334155;
+}
+
+body.dark-mode .notice-recipient-body .notice {
+  background: #111827;
+  border-color: #334155;
+  color: #e2e8f0;
+}
+
+body.dark-mode .recipient-center-label,
+body.dark-mode .recipient-panel-title,
+body.dark-mode .recipient-subpanel h4 {
+  color: #f8fafc;
+}
+
+body.dark-mode .recipient-branch-hint {
+  color: #cbd5e1;
+}
+
+body.dark-mode .recipient-branches::before {
+  background: #475569;
+}
+
+body.dark-mode .recipient-panel-purple {
+  background: #1b1530;
+  border-color: #4c3d7a;
+}
+
+body.dark-mode .recipient-panel-cyan {
+  background: #10242b;
+  border-color: #235869;
+}
+
+body.dark-mode .recipient-option {
+  background: #0b1220;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+body.dark-mode .recipient-option:hover {
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.45);
+}
+
+body.dark-mode .recipient-option.selected {
+  background: linear-gradient(180deg, #111827, color-mix(in srgb, var(--group-accent, #ea580c) 20%, #111827));
+  color: #f8fafc;
+}
+
+body.dark-mode .recipient-name,
+body.dark-mode .recipient-option.selected .recipient-name {
+  color: #f8fafc;
+}
+
+body.dark-mode .recipient-role {
+  color: #cbd5e1;
+}
+
+body.dark-mode .recipient-option.unavailable {
+  background: #172033;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+body.dark-mode .recipient-option.unavailable .recipient-email,
+body.dark-mode .recipient-option.unavailable .recipient-role {
+  color: #94a3b8;
+}
+
 .progress-text {
   color: rgba(255, 255, 255, 0.92);
   font-size: 0.9rem;
@@ -3005,8 +3076,8 @@ textarea:focus {
   align-items: center;
   display: grid;
   gap: 6px;
-  justify-items: center;
-  text-align: center;
+  justify-items: stretch;
+  text-align: left;
 }
 
 .recipient-center-label {
@@ -3014,11 +3085,12 @@ textarea:focus {
   font-size: 0.8rem;
   font-weight: 900;
   letter-spacing: 0.06em;
+  text-align: center;
   text-transform: uppercase;
 }
 
 .recipient-center-node {
-  max-width: 260px;
+  max-width: none;
   width: 100%;
 }
 
@@ -3027,14 +3099,13 @@ textarea:focus {
   border-radius: 26px;
   border-width: 2px;
   box-shadow: 0 10px 22px rgba(21, 128, 61, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  justify-content: center;
-  justify-items: initial;
-  min-height: 92px;
-  padding: 14px 18px;
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-height: 0;
+  padding: 16px 20px;
   text-align: center;
+  width: 100%;
 }
 
 .recipient-center-node .recipient-name,
@@ -3159,7 +3230,7 @@ textarea:focus {
   min-width: 0;
   padding: 12px 14px;
   text-align: left;
-  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+  transition: background 80ms ease, border-color 80ms ease, transform 80ms ease;
 }
 
 .recipient-option:hover {
