@@ -322,9 +322,13 @@ body {
 .process-poster-frame {
   background: #eef8f6;
   border: 0;
-  height: 100%;
+  height: auto;
+  justify-self: center;
+  max-height: 100%;
+  max-width: 100%;
   min-height: 0;
-  width: 100%;
+  object-fit: contain;
+  width: auto;
 }
 
 button,

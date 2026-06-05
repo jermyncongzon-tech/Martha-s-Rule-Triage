@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260602-0006";
+const APP_VERSION = "20260605-0007";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -752,7 +752,7 @@ function renderStartView() {
             <strong>I am triaging a call</strong>
           </button>
           <button class="start-option" type="button" data-action="start-mode" data-tab="visitLog">
-            <span>Call visit log</span>
+            <span>Patient review log</span>
             <strong>I am logging a review</strong>
           </button>
           <button class="process-poster-alert" type="button" data-action="open-process-poster">
@@ -775,11 +775,11 @@ function renderProcessPosterModal() {
         <header class="process-poster-header">
           <div>
             <p>Process poster</p>
-            <h2 id="process-poster-title">Martha's Rule Call Process: Old vs New</h2>
+            <h2 id="process-poster-title">Martha's Rule Process Poster</h2>
           </div>
           <button class="btn secondary modal-close" type="button" data-action="close-process-poster" aria-label="Close process poster">Close</button>
         </header>
-        <iframe class="process-poster-frame" src="marthas-rule-process-poster.html" title="Martha's Rule Call Process: Old vs New"></iframe>
+        <img class="process-poster-frame" src="assets/MR Triage poster V1.jpg" alt="Martha's Rule process poster" />
       </section>
     </div>
   `;
@@ -840,7 +840,7 @@ function renderTabs() {
   return `
     <nav class="app-tabs" aria-label="Main app sections">
       <button class="tab-button ${activeTab === "triage" ? "active" : ""}" type="button" data-action="set-tab" data-tab="triage">Call triage</button>
-      <button class="tab-button ${activeTab === "visitLog" ? "active" : ""}" type="button" data-action="set-tab" data-tab="visitLog">Call visit log</button>
+      <button class="tab-button ${activeTab === "visitLog" ? "active" : ""}" type="button" data-action="set-tab" data-tab="visitLog">Patient review log</button>
     </nav>
   `;
 }
@@ -895,7 +895,7 @@ function renderVisitLogHandoverBanner() {
 
 function renderVisitLogStepOverview() {
   return `
-    <nav class="step-overview triage-step-overview visit-step-overview" aria-label="Call visit log workflow steps">
+    <nav class="step-overview triage-step-overview visit-step-overview" aria-label="Patient review log workflow steps">
       ${visitLogSteps.map((step, index) => `
         <button class="step-pill ${visitLogStepStatusClass(step, index)}" type="button" data-action="set-visit-step" data-step="${index}" aria-current="${index === state.currentVisitStep ? "step" : "false"}">
           <span>${index + 1}</span>
@@ -1001,7 +1001,7 @@ function renderVisitLogLearningNotificationsSection() {
           ${textarea("Feedback / learning notes", "visitLog.actionsOutcomes.feedbackLearningNotes")}
         ` : ""}
         <div class="field-note">
-          By default, this call visit log will be sent to managers and matrons.
+          By default, this patient review log will be sent to managers and matrons.
         </div>
       </div>
     </section>
@@ -3032,9 +3032,9 @@ function generateStructuredSummary() {
     const category = visit.callCategory;
     const categoryText = recategorised
       ? `The call was re-categorised as ${categoryDisplayLabel(calculateUrgencyFromCategory(category))}. Category detail: ${categoryOfCallLabel(category)}. Core concern: ${primaryConcernFormValueForCategory(category) || "not entered"}. Secondary concern: ${secondaryConcernFormValueForCategory(category) || "not entered"}. Ward contact status: ${wardContactLabel(category.wardContact)}.`
-      : `The call was not re-categorised in this visit log.`;
+      : `The call was not re-categorised in this patient review log.`;
 
-    state.generatedSummary = `Martha's Rule call visit log for MRN ${valueOr(state.patient.mrn)}, located on ${valueOr(visitLogWardAreaDisplayValue())}${state.visitLog.location.bedNumber ? `, bed ${state.visitLog.location.bedNumber}` : ""}. Ethnic group recorded as ${valueOr(state.patient.ethnicGroup)}. Date of visit was ${valueOr(visit.dateOfVisit)} and PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}.
+    state.generatedSummary = `Martha's Rule patient review log for MRN ${valueOr(state.patient.mrn)}, located on ${valueOr(visitLogWardAreaDisplayValue())}${state.visitLog.location.bedNumber ? `, bed ${state.visitLog.location.bedNumber}` : ""}. Ethnic group recorded as ${valueOr(state.patient.ethnicGroup)}. Date of visit was ${valueOr(visit.dateOfVisit)} and PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}.
 
 Clinical assessment: NEWS2 at time of call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}.
 
@@ -3075,13 +3075,13 @@ Call category: ${categoryText}
   const warningDetails = shouldShowWarningSignDetails(category) ? ` Red flags recorded: ${listLabels(redFlagOptions, category.redFlags)}${category.otherRedFlagText ? `; other warning sign: ${category.otherRedFlagText}` : ""}.` : "";
   state.generatedSummary = `A Martha's Rule call was answered on ${valueOr(state.callDetails.dateOfReferral)} at ${valueOr(state.callDetails.timePhoneAnswered)} by a caller recorded as ${callerType}. Repeat-call status was ${valueOr(state.callDetails.repeatCall, "not selected")}. The patient details recorded were ${patientDetails}. The patient was located at ${locationDetails}.
 
-Category: ${categoryDisplayLabel(urgency)}${state.visitLog.recategoriseCall === "yes" ? ` (re-categorised in visit log from ${categoryDisplayLabel(originalUrgency)})` : ""}. Suggested route: ${route}. Recommended action: ${action.instruction}
+Category: ${categoryDisplayLabel(urgency)}${state.visitLog.recategoriseCall === "yes" ? ` (re-categorised in patient review log from ${categoryDisplayLabel(originalUrgency)})` : ""}. Suggested route: ${route}. Recommended action: ${action.instruction}
 
 The core concern was ${concern}.${warningDetails} Secondary concerns recorded: ${secondaryConcerns}. Ward contact status was ${wardContactLabel(category.wardContact)}.
 
 The caller's main concern was summarised as: ${valueOr(state.concernSummary.concernsSummary)}.${hasVisitLog ? `
 
-Visit log: Date of visit was ${valueOr(visit.dateOfVisit)}. PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}. NEWS2 at call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}. Actions taken: ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcomes recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}.` : ""}`;
+Patient review log: Date of visit was ${valueOr(visit.dateOfVisit)}. PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}. NEWS2 at call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}. Actions taken: ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcomes recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}.` : ""}`;
   state.generatedSummaryHtml = buildStructuredSummaryHtml();
 }
 
@@ -3184,7 +3184,7 @@ function buildStructuredSummaryHtml() {
         summaryRowHtml("Suggested route", calculateRoute(urgency)),
         summaryRowHtml("Recommended action", triageActionDetail(urgency).instruction),
       ])}
-      ${hasVisitLog ? summarySectionHtml("Visit Log", [
+      ${hasVisitLog ? summarySectionHtml("Patient Review Log", [
         summaryRowHtml("Date of visit", formatDateForEmail(visit.dateOfVisit)),
         summaryRowHtml("Time of PERRT/Outreach attendance", visit.timeOfAttendance),
         summaryRowHtml("NEWS2 at time of call", visit.clinicalAssessment.news2AtCall),
@@ -3204,7 +3204,7 @@ function buildVisitLogStructuredSummaryHtml() {
 
   return `
     <div style="font-family:Arial, Helvetica, sans-serif; color:#111827; line-height:1.35;">
-      <h2 style="margin:0 0 8px; color:#003F3D; font-size:18px;">Martha's Rule Call Visit Log Summary</h2>
+      <h2 style="margin:0 0 8px; color:#003F3D; font-size:18px;">Martha's Rule Patient Review Log Summary</h2>
       ${summarySectionHtml("Attendance and Clinical Assessment", [
         summaryRowHtml("MRN number", state.patient.mrn),
         summaryRowHtml("Ethnic group", state.patient.ethnicGroup),
@@ -3480,7 +3480,7 @@ ${emailSegment("Actions and Outcomes", [
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
 ${emailSegment("Learning and Notifications", [
   emailRow("Status", "No additional fields required", true),
-  emailRow("Submitted by", "Generated from visit log app", true),
+  emailRow("Submitted by", "Generated from patient review log app", true),
 ])}
                   <p style="margin:14px 0 0 0; font-size:13px; line-height:18px;">Best wishes,<br><span style="color:#0b3d3c;">Martha's Rule Steering Group &amp; PERRT</span></p>
                   <p style="margin:10px 0 0 0; font-size:11px; line-height:16px; color:#666666;">This email is generated automatically from a Martha's Rule PERRT review record following a triaged Martha's Rule call.</p>
@@ -3684,7 +3684,7 @@ function buildCsvRows() {
     ["Location", "Bed number", exportedBedNumber],
     ["Location", "Specialty / Medical team", state.location.specialtyMedicalTeam],
     ["Caller", "Caller type", state.caller.callerType],
-    ["Visit log", "Re-categorised in visit log", state.visitLog.recategoriseCall],
+    ["Patient review log", "Re-categorised in patient review log", state.visitLog.recategoriseCall],
     ["Triage", "Urgency", categoryDisplayLabel(urgency)],
     ["Triage", "Suggested route", route],
     ["Triage", "Recommended action", action.instruction],
@@ -4013,7 +4013,7 @@ function applyTestAutofill() {
       caseCode: "ABC123",
       news2AtCall: "2",
       news2AtAttendance: "2",
-      additionalClinicalNotes: "Test visit log: patient reviewed, observations stable, advice given to ward team.",
+      additionalClinicalNotes: "Test patient review log: patient reviewed, observations stable, advice given to ward team.",
     },
     actionsOutcomes: {
       perrtActionsTaken: ["clinical_review_suggestions", "safety_netting"],
