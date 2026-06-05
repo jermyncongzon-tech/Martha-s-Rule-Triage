@@ -293,6 +293,13 @@ body {
   overflow: hidden;
 }
 
+.process-poster-scroll {
+  background: #eef8f6;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+}
+
 .process-poster-header {
   align-items: center;
   background: #fff;
@@ -323,12 +330,12 @@ body {
   background: #eef8f6;
   border: 0;
   height: auto;
-  justify-self: center;
-  max-height: 100%;
+  display: block;
+  margin: 0 auto;
   max-width: 100%;
   min-height: 0;
   object-fit: contain;
-  width: auto;
+  width: 100%;
 }
 
 button,
@@ -517,6 +524,19 @@ body.dark-mode .choice-group legend,
 body.dark-mode .field-note,
 body.dark-mode .muted {
   color: var(--ink);
+}
+
+body.dark-mode .field-inline-action {
+  background: #1e293b;
+  border-color: #475569;
+  color: #cbd5e1;
+}
+
+body.dark-mode .field-inline-action:hover,
+body.dark-mode .field-inline-action:focus-visible {
+  background: #334155;
+  border-color: #64748b;
+  color: #f8fafc;
 }
 
 body.dark-mode .start-option,
@@ -1508,6 +1528,33 @@ body.dark-mode .recipient-option.unavailable .recipient-role {
   color: #334155;
   font-size: 0.9rem;
   font-weight: 800;
+}
+
+.field-heading {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.field-inline-action {
+  background: #eef8f6;
+  border: 1px solid #b8d8d2;
+  border-radius: 999px;
+  color: var(--uclh-dark-jade);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 5px 10px;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.field-inline-action:hover,
+.field-inline-action:focus-visible {
+  background: #dff2ee;
+  border-color: #92c8be;
+  color: #004746;
+  outline: none;
 }
 
 .field-note {

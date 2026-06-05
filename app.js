@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260605-0007";
+const APP_VERSION = "20260605-0008";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -196,6 +196,7 @@ let wardContactModalOpen = false;
 let otherWardEmailModalOpen = false;
 let otherWardEmailOpenFormAfterSave = false;
 let noticeRecipientModalOpen = false;
+let mrnAddLaterWarningOpen = false;
 let pendingNoticeRecipientScrollTop = null;
 let noticeRecipientBranchState = { uch: false, nhnn: false };
 let handoverWindowPosition = { x: null, y: null };
@@ -209,8 +210,8 @@ const triageSteps = [
   { id: "patient", title: "Patient Demographic", render: renderPatientSection },
   { id: "location", title: "Location and Clinical Context", render: renderLocationSection },
   { id: "caller", title: "Caller and Call Context", render: renderCallerSection },
-  { id: "triage", title: "Triage", render: renderTriageSection },
   { id: "concernSummary", title: "Caller Concern Summary", render: renderConcernSummarySection },
+  { id: "triage", title: "Triage", render: renderTriageSection },
   { id: "triageRouteAction", title: "Triage Route and Action", render: renderTriageRouteActionSection },
 ];
 
@@ -722,6 +723,7 @@ function renderApp() {
       ${renderWardContactModal()}
       ${renderOtherWardEmailModal()}
       ${renderNoticeRecipientModal()}
+      ${renderMrnAddLaterWarningModal()}
       ${renderEpicCopyConfirmModal()}
       ${renderVisitLogHandoverBanner()}
     </div>
@@ -779,7 +781,9 @@ function renderProcessPosterModal() {
           </div>
           <button class="btn secondary modal-close" type="button" data-action="close-process-poster" aria-label="Close process poster">Close</button>
         </header>
-        <img class="process-poster-frame" src="assets/MR Triage poster V1.jpg" alt="Martha's Rule process poster" />
+        <div class="process-poster-scroll">
+          <img class="process-poster-frame" src="assets/MR Triage poster V1.jpg" alt="Martha's Rule process poster" />
+        </div>
       </section>
     </div>
   `;
@@ -1212,6 +1216,34 @@ function renderEpicCopyConfirmModal() {
         <div class="email-preview-actions">
           <button class="btn secondary" type="button" data-action="close-epic-copy">Cancel</button>
           <button class="btn primary epic-copy-button" type="button" data-action="confirm-epic-copy">Copy summary</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderMrnAddLaterWarningModal() {
+  if (!mrnAddLaterWarningOpen) return "";
+  return `
+    <div class="modal-backdrop">
+      <section class="epic-copy-modal" role="dialog" aria-modal="true" aria-labelledby="mrn-add-later-title">
+        <div class="modal-header">
+          <div>
+            <h2 id="mrn-add-later-title">MRN still marked add later</h2>
+            <p>Please review the patient identifier before sending notices.</p>
+          </div>
+          <button class="btn secondary modal-close" type="button" data-action="close-mrn-add-later-warning" aria-label="Close MRN add later warning">Close</button>
+        </div>
+        <div class="epic-copy-modal-body">
+          <div class="epic-copy-modal-mrn">
+            <span>Patient MRN</span>
+            <strong>${escapeHtml(state.patient.mrn || "MRN not entered")}</strong>
+          </div>
+          <p>The MRN is currently set to <strong>Add later</strong>. Please make sure this is intentional before opening the notice form and sending onward communication.</p>
+        </div>
+        <div class="email-preview-actions">
+          <button class="btn secondary" type="button" data-action="close-mrn-add-later-warning">Back</button>
+          <button class="btn primary" type="button" data-action="continue-mrn-add-later-warning">Continue anyway</button>
         </div>
       </section>
     </div>
@@ -1657,7 +1689,13 @@ function renderNoticeRecipientModal() {
 function renderPatientSection() {
   return `
     <div class="field-grid">
-      ${field("MRN number", "patient.mrn")}
+      <label class="field">
+        <span class="field-heading">
+          <span>MRN number</span>
+          <button class="field-inline-action" type="button" data-action="set-mrn-add-later">Add later</button>
+        </span>
+        <input type="text" data-bind="patient.mrn" value="${escapeHtml(getPath("patient.mrn") || "")}" />
+      </label>
       ${field("Date of birth", "patient.dob", "date")}
       ${selectField("Gender", "patient.gender", genderOptions, "Select gender")}
       ${radioGroup("Learning Disability or Neurodiversity", "patient.learningDisabilityNeurodiversity", [["yes", "Yes"], ["no", "No"], ["not_known", "Not known"]])}
@@ -2981,6 +3019,11 @@ function openPrefilledMicrosoftForm() {
     window.alert(`Please complete the required call triage fields before opening the form: ${missing.join(", ")}.`);
     return;
   }
+  if (activeTab === "triage" && state.patient.mrn === "Add later") {
+    mrnAddLaterWarningOpen = true;
+    renderApp();
+    return;
+  }
   if (otherWardRecipientEmailRequired()) {
     otherWardEmailModalOpen = true;
     otherWardEmailOpenFormAfterSave = true;
@@ -4264,6 +4307,7 @@ app.addEventListener("click", (event) => {
     otherWardEmailModalOpen = false;
     otherWardEmailOpenFormAfterSave = false;
     noticeRecipientModalOpen = false;
+    mrnAddLaterWarningOpen = false;
     epicCopyConfirmOpen = false;
     renderApp();
     return;
@@ -4306,6 +4350,9 @@ app.addEventListener("click", (event) => {
   if (action === "toggle-theme") {
     toggleThemePreference();
   }
+  if (action === "set-mrn-add-later") {
+    state.patient.mrn = "Add later";
+  }
   if (action === "start-mode") {
     activeTab = target.dataset.tab || "triage";
     appModeSelected = true;
@@ -4331,6 +4378,9 @@ app.addEventListener("click", (event) => {
     otherWardEmailModalOpen = false;
     otherWardEmailOpenFormAfterSave = false;
   }
+  if (action === "close-mrn-add-later-warning") {
+    mrnAddLaterWarningOpen = false;
+  }
   if (action === "close-notice-recipient-modal") {
     noticeRecipientModalOpen = false;
     noticeRecipientBranchState = { uch: false, nhnn: false };
@@ -4354,6 +4404,11 @@ app.addEventListener("click", (event) => {
       }
       window.open(buildMicrosoftFormUrl(), "_blank", "noopener,noreferrer");
     }
+  }
+  if (action === "continue-mrn-add-later-warning") {
+    mrnAddLaterWarningOpen = false;
+    openPrefilledMicrosoftFormWithoutPrompt();
+    return;
   }
   if (action === "toggle-notice-recipient") {
     const noticeBody = document.querySelector(".notice-recipient-body");
@@ -4523,6 +4578,12 @@ app.addEventListener("keydown", (event) => {
 
   if (event.key === "Escape" && noticeRecipientModalOpen) {
     noticeRecipientModalOpen = false;
+    renderApp();
+    return;
+  }
+
+  if (event.key === "Escape" && mrnAddLaterWarningOpen) {
+    mrnAddLaterWarningOpen = false;
     renderApp();
     return;
   }
