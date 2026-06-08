@@ -12,6 +12,7 @@ const VISIT_LOG_PREFILL_QUERY_PARAMS = {
   wardArea: ["visitWardArea", "wardArea", "ward"],
   wardAreaOther: ["visitWardAreaOther", "wardAreaOther", "otherWard"],
   bedNumber: ["visitBedNumber", "bedNumber", "bed"],
+  learningDisabilityNeurodiversity: ["learningDisabilityNeurodiversity", "learningDisability", "neurodiversity"],
   triageCategory: ["triageCategory", "category", "urgency"],
   primaryConcern: ["primaryConcern", "primary"],
   secondaryConcern: ["secondaryConcern", "secondary"],
@@ -968,6 +969,7 @@ function renderVisitLogClinicalAssessmentSection() {
         ${field("6-digit code", "visitLog.clinicalAssessment.caseCode", "text", "ABC123", "text", 6)}
         ${field("MRN number", "patient.mrn")}
         ${selectField("Ethnic group", "patient.ethnicGroup", ethnicGroupOptions, "Select ethnic group")}
+        ${radioGroup("Learning Disability or Neurodiversity", "patient.learningDisabilityNeurodiversity", [["yes", "Yes"], ["no", "No"], ["not_known", "Not known"]])}
         ${selectField("Ward / Area", "visitLog.location.wardArea", wardAreaOptions, "Select ward / area")}
         ${state.visitLog.location.wardArea === "Other" ? field("Other ward / area", "visitLog.location.wardAreaOther", "text", "Enter ward / area") : ""}
         ${field("Bed number", "visitLog.location.bedNumber")}
@@ -1025,6 +1027,7 @@ function renderVisitLogReviewSection() {
           ${renderVisitReviewCard("1", "Attendance and Clinical Assessment", [
             ["6-digit code", visit.clinicalAssessment.caseCode],
             ["MRN number", state.patient.mrn],
+            ["Learning Disability or Neurodiversity", state.patient.learningDisabilityNeurodiversity],
             ["Ward / Area", visitLogWardAreaDisplayValue()],
             ["Bed number", state.visitLog.location.bedNumber],
             ["Date of visit", formatDateForEmail(visit.dateOfVisit)],
@@ -1698,7 +1701,6 @@ function renderPatientSection() {
       </label>
       ${field("Date of birth", "patient.dob", "date")}
       ${selectField("Gender", "patient.gender", genderOptions, "Select gender")}
-      ${radioGroup("Learning Disability or Neurodiversity", "patient.learningDisabilityNeurodiversity", [["yes", "Yes"], ["no", "No"], ["not_known", "Not known"]])}
     </div>
   `;
 }
@@ -2918,6 +2920,14 @@ function additionalNotificationFormValue() {
   return state.visitLog.notifications.otherEmails || "";
 }
 
+function learningDisabilityMicrosoftFormValue() {
+  return state.patient.learningDisabilityNeurodiversity === "not_known"
+    ? "Not known"
+    : state.patient.learningDisabilityNeurodiversity
+      ? state.patient.learningDisabilityNeurodiversity.charAt(0).toUpperCase() + state.patient.learningDisabilityNeurodiversity.slice(1)
+      : "";
+}
+
 function buildVisitLogMicrosoftFormParams() {
   const visit = state.visitLog;
   const recategorised = visit.recategoriseCall === "yes";
@@ -2927,6 +2937,7 @@ function buildVisitLogMicrosoftFormParams() {
   return [
     ["r31846d6fb07d4d018cab96bd944b9382", rawValue(state.patient.mrn)],
     ["r7f3b043cf0334f46b0810e1ec98aaca8", rawValue(state.patient.ethnicGroup)],
+    ["rf9e4a9bb156442f49263236e466e6340", rawValue(learningDisabilityMicrosoftFormValue())],
     ["rd353a0b8965b4712bff46796a92b95e1", rawValue(visitLogWardAreaDisplayValue())],
     ["r68acc9216406417388bae3097858f053", rawValue(state.visitLog.location.bedNumber)],
     [VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD, rawValue(visit.clinicalAssessment.caseCode)],
@@ -3079,7 +3090,7 @@ function generateStructuredSummary() {
 
     state.generatedSummary = `Martha's Rule patient review log for MRN ${valueOr(state.patient.mrn)}, located on ${valueOr(visitLogWardAreaDisplayValue())}${state.visitLog.location.bedNumber ? `, bed ${state.visitLog.location.bedNumber}` : ""}. Ethnic group recorded as ${valueOr(state.patient.ethnicGroup)}. Date of visit was ${valueOr(visit.dateOfVisit)} and PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}.
 
-Clinical assessment: NEWS2 at time of call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}.
+Clinical assessment: Learning disability or neurodiversity status was ${valueOr(state.patient.learningDisabilityNeurodiversity)}. NEWS2 at time of call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}.
 
 Actions and outcomes: Actions taken were ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcome recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}.
 
@@ -3099,7 +3110,7 @@ Call category: ${categoryText}
   const callerType = state.caller.callerType ? state.caller.callerType.replace(/_/g, "-") : "not selected";
   const concern = primaryConcernFormValueForCategory(category) || "not selected";
   const secondaryConcerns = listLabels(secondaryFactorOptions, effectiveSecondaryFactors(category));
-  const patientDetails = `MRN ${valueOr(state.patient.mrn)}, date of birth ${valueOr(state.patient.dob)}, gender ${valueOr(state.patient.gender)}, ethnic group ${valueOr(state.patient.ethnicGroup)}, learning disability/neurodiversity status ${valueOr(state.patient.learningDisabilityNeurodiversity)}`;
+  const patientDetails = `MRN ${valueOr(state.patient.mrn)}, date of birth ${valueOr(state.patient.dob)}, gender ${valueOr(state.patient.gender)}, ethnic group ${valueOr(state.patient.ethnicGroup)}`;
   const locationDetails = `${valueOr(locationWardAreaDisplayValue())}${state.location.bedNumber ? `, bed ${state.location.bedNumber}` : ""}, under ${valueOr(state.location.specialtyMedicalTeam)}`;
   const visit = state.visitLog;
   const hasVisitLog = Boolean(
@@ -3124,7 +3135,7 @@ The core concern was ${concern}.${warningDetails} Secondary concerns recorded: $
 
 The caller's main concern was summarised as: ${valueOr(state.concernSummary.concernsSummary)}.${hasVisitLog ? `
 
-Patient review log: Date of visit was ${valueOr(visit.dateOfVisit)}. PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}. NEWS2 at call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}. Actions taken: ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcomes recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}.` : ""}`;
+Patient review log: Learning disability or neurodiversity status was ${valueOr(state.patient.learningDisabilityNeurodiversity)}. Date of visit was ${valueOr(visit.dateOfVisit)}. PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}. NEWS2 at call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}. Actions taken: ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcomes recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}.` : ""}`;
   state.generatedSummaryHtml = buildStructuredSummaryHtml();
 }
 
@@ -3208,7 +3219,6 @@ function buildStructuredSummaryHtml() {
         summaryRowHtml("Date of birth", formatDateForEmail(state.patient.dob)),
         summaryRowHtml("Gender", state.patient.gender),
         summaryRowHtml("Ethnic group", state.patient.ethnicGroup),
-        summaryRowHtml("Learning Disability or Neurodiversity", state.patient.learningDisabilityNeurodiversity),
         summaryRowHtml("Ward / Area", visitLogWardAreaDisplayValue()),
         summaryRowHtml("Bed number", state.visitLog.location.bedNumber),
         summaryRowHtml("Specialty / Medical team", state.location.specialtyMedicalTeam),
@@ -3228,6 +3238,7 @@ function buildStructuredSummaryHtml() {
         summaryRowHtml("Recommended action", triageActionDetail(urgency).instruction),
       ])}
       ${hasVisitLog ? summarySectionHtml("Patient Review Log", [
+        summaryRowHtml("Learning Disability or Neurodiversity", state.patient.learningDisabilityNeurodiversity),
         summaryRowHtml("Date of visit", formatDateForEmail(visit.dateOfVisit)),
         summaryRowHtml("Time of PERRT/Outreach attendance", visit.timeOfAttendance),
         summaryRowHtml("NEWS2 at time of call", visit.clinicalAssessment.news2AtCall),
@@ -3251,6 +3262,7 @@ function buildVisitLogStructuredSummaryHtml() {
       ${summarySectionHtml("Attendance and Clinical Assessment", [
         summaryRowHtml("MRN number", state.patient.mrn),
         summaryRowHtml("Ethnic group", state.patient.ethnicGroup),
+        summaryRowHtml("Learning Disability or Neurodiversity", state.patient.learningDisabilityNeurodiversity),
         summaryRowHtml("Ward / Area", visitLogWardAreaDisplayValue()),
         summaryRowHtml("Bed number", state.visitLog.location.bedNumber),
         summaryRowHtml("Date of visit", formatDateForEmail(visit.dateOfVisit)),
@@ -3508,6 +3520,7 @@ function buildVisitLogEmailHtml() {
                 <td style="background:#ffffff; border:1px solid #d9e7e7; border-top:none; padding:16px 20px 18px 20px; border-radius:0 0 12px 12px;">
 ${emailSegment("Attendance and Clinical Assessment", [
   emailRow("MRN number", state.patient.mrn, true, { strong: true }),
+  emailRow("Learning Disability or Neurodiversity", state.patient.learningDisabilityNeurodiversity),
   emailRow("Ward", visitLogWardAreaDisplayValue()),
   emailRow("Date of visit", formatDateForEmail(visit.dateOfVisit), true),
   emailRow("Time of PERRT/Outreach attendance", visit.timeOfAttendance),
@@ -3918,6 +3931,12 @@ function firstUrlParam(params, names) {
   return "";
 }
 
+function normalizeLearningDisabilityPrefill(value) {
+  const normalized = (value || "").trim().toLowerCase().replace(/\s+/g, "_");
+  if (normalized === "yes" || normalized === "no" || normalized === "not_known") return normalized;
+  return "";
+}
+
 function getVisitLogPrefillFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return {
@@ -3925,6 +3944,7 @@ function getVisitLogPrefillFromUrl() {
     wardArea: firstUrlParam(params, VISIT_LOG_PREFILL_QUERY_PARAMS.wardArea),
     wardAreaOther: firstUrlParam(params, VISIT_LOG_PREFILL_QUERY_PARAMS.wardAreaOther),
     bedNumber: firstUrlParam(params, VISIT_LOG_PREFILL_QUERY_PARAMS.bedNumber),
+    learningDisabilityNeurodiversity: normalizeLearningDisabilityPrefill(firstUrlParam(params, VISIT_LOG_PREFILL_QUERY_PARAMS.learningDisabilityNeurodiversity)),
     triageCategory: firstUrlParam(params, VISIT_LOG_PREFILL_QUERY_PARAMS.triageCategory),
     primaryConcern: firstUrlParam(params, VISIT_LOG_PREFILL_QUERY_PARAMS.primaryConcern),
     secondaryConcern: firstUrlParam(params, VISIT_LOG_PREFILL_QUERY_PARAMS.secondaryConcern),
@@ -3973,6 +3993,9 @@ function applyUrlPrefill() {
   };
   if (prefill.mrn) {
     state.patient.mrn = prefill.mrn;
+  }
+  if (prefill.learningDisabilityNeurodiversity) {
+    state.patient.learningDisabilityNeurodiversity = prefill.learningDisabilityNeurodiversity;
   }
 
   activeTab = "visitLog";
