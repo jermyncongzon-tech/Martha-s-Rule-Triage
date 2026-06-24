@@ -213,6 +213,26 @@ body {
   transform: scale(1.035);
 }
 
+.start-option:disabled,
+.start-option.start-option-disabled {
+  background: #f3f5f8;
+  border-color: #d1d9e6;
+  box-shadow: none;
+  color: #6b7280;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.start-option:disabled:hover,
+.start-option:disabled:focus-visible,
+.start-option.start-option-disabled:hover,
+.start-option.start-option-disabled:focus-visible {
+  background: #f3f5f8;
+  border-color: #d1d9e6;
+  box-shadow: none;
+  transform: none;
+}
+
 .start-option span {
   color: var(--uclh-jade);
   font-size: 0.84rem;
@@ -220,9 +240,21 @@ body {
   text-transform: uppercase;
 }
 
+.start-option:disabled span,
+.start-option.start-option-disabled span {
+  color: #94a3b8;
+}
+
 .start-option strong {
   font-size: clamp(1.45rem, 3vw, 2.35rem);
   line-height: 1.08;
+}
+
+.start-option-note {
+  color: #6b7280;
+  font-size: 0.96rem;
+  line-height: 1.45;
+  margin: 0;
 }
 
 .process-poster-alert {

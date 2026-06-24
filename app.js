@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260608-0009";
+const APP_VERSION = "20260624-0010";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -754,9 +754,10 @@ function renderStartView() {
             <span>Call triage</span>
             <strong>I am triaging a call</strong>
           </button>
-          <button class="start-option" type="button" data-action="start-mode" data-tab="visitLog">
+          <button class="start-option start-option-disabled" type="button" disabled aria-disabled="true">
             <span>Patient review log</span>
             <strong>I am logging a review</strong>
+            <p class="start-option-note">Please use the link sent to your email to open the patient review log directly. This box is disabled on the front page.</p>
           </button>
           <button class="process-poster-alert" type="button" data-action="open-process-poster">
             <span aria-hidden="true">i</span>
