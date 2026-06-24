@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260624-0011";
+const APP_VERSION = "20260624-0012";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -191,7 +191,6 @@ let epicCopyConfirmOpen = false;
 let epicCopyStatus = "";
 let processPosterOpen = false;
 let darkModeEnabled = false;
-let autoFillMenuOpen = false;
 let pendingTriageQuestionCenter = false;
 let wardContactModalOpen = false;
 let otherWardEmailModalOpen = false;
@@ -816,14 +815,7 @@ function renderHeader() {
 function renderVersionControl(context = "app") {
   return `
     <div class="version-control ${context === "start" ? "start" : "app"}">
-      <button class="version-button ${autoFillMenuOpen ? "open" : ""}" type="button" data-action="toggle-version-menu" aria-expanded="${autoFillMenuOpen ? "true" : "false"}" aria-haspopup="true">
-        Version ${escapeHtml(APP_VERSION)}
-      </button>
-      ${autoFillMenuOpen ? `
-        <div class="version-menu" role="menu" aria-label="Version tools">
-          <button class="auto-fill-button" type="button" data-action="auto-fill-test" role="menuitem">Auto fill</button>
-        </div>
-      ` : ""}
+      <span class="version-label">Version ${escapeHtml(APP_VERSION)}</span>
     </div>
   `;
 }
@@ -4040,114 +4032,6 @@ function resetState() {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-function applyTestAutofill() {
-  const testState = clone(defaultState);
-
-  testState.callDetails = {
-    dateOfReferral: "2026-05-19",
-    timePhoneAnswered: "09:30",
-    delayInAnswering: "no",
-    repeatCall: "no",
-  };
-  testState.caller.callerType = "family_carer";
-  testState.patient = {
-    mrn: "999999",
-    dob: "1970-01-01",
-    gender: "Not Stated",
-    ethnicGroup: "Not stated",
-    learningDisabilityNeurodiversity: "not_known",
-  };
-  testState.location = {
-    wardArea: "Test",
-    wardAreaOther: "",
-    otherWardRecipientEmails: "",
-    bedNumber: "B12",
-    specialtyMedicalTeam: "General Medicine",
-  };
-  testState.triage = {
-    acuteDeterioration: "no",
-    redFlags: [],
-    otherRedFlagText: "",
-    coreConcern: "pain",
-    sameDayReview: "yes",
-    secondaryFactors: ["raised_but_unresolved", "delay_in_response_or_action"],
-    genuineWorry: "",
-    wardContact: "yes",
-    noticeRecipients: ["uclh.PERRTband8@nhs.net", "jermyn.congzon@nhs.net"],
-  };
-  testState.concernSummary = {
-    mostWorried: "Family reports the patient has ongoing pain and feels more unwell.",
-    alreadyTried: "Caller has spoken to the ward team and is waiting for a further update.",
-    unresolved: "Pain and communication concerns remain unresolved.",
-    concernsSummary: "Test record: family is worried about ongoing pain, delay in response, and unresolved ward communication.",
-  };
-  testState.repeatCallUpdate = {
-    mrn: "999999",
-    wardArea: "Test",
-    wardAreaOther: "",
-    otherWardRecipientEmails: "",
-    bedNumber: "B12",
-    sameConcern: "",
-    additionalInformation: "Test repeat-call note: caller contacted the phoneline again because the concern remains unresolved.",
-    triageMethod: "guided",
-    directTriageCode: "",
-  };
-  testState.visitLog = {
-    ...testState.visitLog,
-    recategoriseCall: "no",
-    location: {
-      wardArea: "Test",
-      wardAreaOther: "",
-      bedNumber: "B12",
-    },
-    dateOfVisit: "2026-05-19",
-    timeOfAttendance: "10:15",
-    clinicalAssessment: {
-      caseCode: "ABC123",
-      news2AtCall: "2",
-      news2AtAttendance: "2",
-      additionalClinicalNotes: "Test patient review log: patient reviewed, observations stable, advice given to ward team.",
-    },
-    actionsOutcomes: {
-      perrtActionsTaken: ["clinical_review_suggestions", "safety_netting"],
-      totalTimeSpent: "1",
-      outcomes: ["Discharged from PERRT/Outreach list"],
-      learningIdentified: "yes",
-      learningTheme: "Communication",
-      feedbackLearningNotes: "Test learning note: confirm clear ward update and document follow-up plan.",
-    },
-    notifications: {
-      recipients: [],
-      otherEmails: "",
-    },
-    handover: {
-      active: true,
-      triageCategory: "U2 - Urgent clinical",
-      primaryConcern: "Pain",
-      secondaryConcern: "Raised but unresolved; delay in response or action",
-      callerConcernSummary: "Test handover: family worried about ongoing pain and delayed response.",
-    },
-  };
-
-  state = testState;
-  activeTab = "triage";
-  appModeSelected = true;
-  state.currentStep = triageSteps.length - 1;
-  state.currentVisitStep = 0;
-  summaryCollapsed = false;
-  epicSummaryCollapsed = true;
-  emailPreviewOpen = false;
-  wardContactModalOpen = false;
-  otherWardEmailModalOpen = false;
-  otherWardEmailOpenFormAfterSave = false;
-  noticeRecipientModalOpen = false;
-  urgencyGuideOpen = false;
-  selectedUrgencyGuide = "";
-  selectedConcernHelp = "";
-  generateStructuredSummary();
-  saveState();
-}
-
 function normalizeWardContactDirectory(directory) {
   const normalized = Object.fromEntries(wardAreaSuggestions.map((wardArea) => [wardArea, []]));
   Object.entries(directory || {}).forEach(([wardArea, contacts]) => {
@@ -4387,16 +4271,6 @@ app.addEventListener("click", (event) => {
   if (!target) return;
 
   const action = target.dataset.action;
-  if (action !== "toggle-version-menu" && action !== "auto-fill-test") {
-    autoFillMenuOpen = false;
-  }
-  if (action === "auto-fill-test") {
-    autoFillMenuOpen = false;
-    applyTestAutofill();
-  }
-  if (action === "toggle-version-menu") {
-    autoFillMenuOpen = !autoFillMenuOpen;
-  }
   if (action === "toggle-theme") {
     toggleThemePreference();
   }

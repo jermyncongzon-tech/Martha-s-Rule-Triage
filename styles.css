@@ -148,43 +148,18 @@ body.visit-log-mode {
   margin-top: 8px;
 }
 
-.version-button {
-  appearance: none;
-  background: transparent;
-  border: 0;
+.version-label {
   color: rgba(255, 255, 255, 0.88);
-  cursor: pointer;
   font-size: 0.84rem;
   font-weight: 850;
   letter-spacing: 0;
   margin: 0;
   padding: 0;
   text-align: left;
-  transition: color 160ms ease, opacity 160ms ease;
 }
 
-.version-button:hover,
-.version-button:focus-visible,
-.version-button.open {
-  color: #ffffff;
-  opacity: 1;
-  outline: none;
-}
-
-.version-control.app .version-button {
+.version-control.app .version-label {
   color: #64748b;
-}
-
-.version-control.app .version-button:hover,
-.version-control.app .version-button:focus-visible,
-.version-control.app .version-button.open {
-  color: #0f172a;
-}
-
-.version-menu {
-  align-items: flex-start;
-  display: flex;
-  flex-direction: column;
 }
 
 .start-shell h1 {
@@ -490,28 +465,6 @@ select {
   width: min(220px, 100%);
 }
 
-.auto-fill-button {
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 999px;
-  color: #9a3412;
-  cursor: pointer;
-  flex: 0 0 auto;
-  font-size: 0.82rem;
-  font-weight: 950;
-  min-height: 36px;
-  padding: 8px 13px;
-  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-  white-space: nowrap;
-}
-
-.auto-fill-button:hover {
-  background: #ffedd5;
-  border-color: #fb923c;
-  box-shadow: 0 10px 24px rgba(154, 52, 18, 0.18);
-  transform: translateY(-1px);
-}
-
 .theme-toggle-button {
   background: #e2e8f0;
   border: 1px solid #cbd5e1;
@@ -654,14 +607,8 @@ body.dark-mode .theme-toggle-button:hover {
   color: #f8fafc;
 }
 
-body.dark-mode .version-control.app .version-button {
+body.dark-mode .version-control.app .version-label {
   color: #cbd5e1;
-}
-
-body.dark-mode .version-control.app .version-button:hover,
-body.dark-mode .version-control.app .version-button:focus-visible,
-body.dark-mode .version-control.app .version-button.open {
-  color: #f8fafc;
 }
 
 body.dark-mode input,
