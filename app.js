@@ -690,6 +690,7 @@ function normalizeCurrentStep() {
 }
 
 function renderApp() {
+  normalizeNavigationMode();
   if (!appModeSelected) {
     app.innerHTML = renderStartView();
     return;
@@ -757,7 +758,7 @@ function renderStartView() {
           <button class="start-option start-option-disabled" type="button" disabled aria-disabled="true">
             <span>Patient review log</span>
             <strong>I am logging a review</strong>
-            <p class="start-option-note">Please use the link sent to your email to open the patient review log directly. This box is disabled on the front page.</p>
+            <p class="start-option-note">Please use the link sent to your email to open the patient review log directly.</p>
           </button>
           <button class="process-poster-alert" type="button" data-action="open-process-poster">
             <span aria-hidden="true">i</span>
@@ -843,10 +844,17 @@ function toggleThemePreference() {
 }
 
 function renderTabs() {
+  if (isVisitLogDirectAccess()) {
+    return `
+      <nav class="app-tabs" aria-label="Main app sections">
+        <button class="tab-button active" type="button" aria-current="page">Patient review log</button>
+      </nav>
+    `;
+  }
+
   return `
     <nav class="app-tabs" aria-label="Main app sections">
-      <button class="tab-button ${activeTab === "triage" ? "active" : ""}" type="button" data-action="set-tab" data-tab="triage">Call triage</button>
-      <button class="tab-button ${activeTab === "visitLog" ? "active" : ""}" type="button" data-action="set-tab" data-tab="visitLog">Patient review log</button>
+      <button class="tab-button active" type="button" aria-current="page">Call triage</button>
     </nav>
   `;
 }
@@ -3919,6 +3927,10 @@ function clearSavedAppDataOnRefresh() {
   state = clone(defaultState);
 }
 
+function isVisitLogDirectAccess() {
+  return Boolean(getCaseCodeFromUrl());
+}
+
 function getCaseCodeFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return normalizeCaseCode(params.get(VISIT_LOG_CASE_CODE_QUERY_PARAM));
@@ -4002,6 +4014,18 @@ function applyUrlPrefill() {
   activeTab = "visitLog";
   appModeSelected = true;
   state.currentVisitStep = 0;
+}
+
+function normalizeNavigationMode() {
+  if (isVisitLogDirectAccess()) {
+    activeTab = "visitLog";
+    appModeSelected = true;
+    return;
+  }
+
+  if (activeTab === "visitLog") {
+    activeTab = "triage";
+  }
 }
 
 function resetState() {
@@ -4556,7 +4580,8 @@ app.addEventListener("click", (event) => {
     state.currentVisitStep = requestedVisitStep;
   }
   if (action === "set-tab") {
-    activeTab = target.dataset.tab || "triage";
+    const requestedTab = target.dataset.tab || "triage";
+    activeTab = isVisitLogDirectAccess() ? "visitLog" : requestedTab === "visitLog" ? "triage" : requestedTab;
   }
   renderApp();
 });
