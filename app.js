@@ -691,6 +691,7 @@ function normalizeCurrentStep() {
 
 function renderApp() {
   normalizeNavigationMode();
+  applyThemeClass();
   if (!appModeSelected) {
     app.innerHTML = renderStartView();
     return;
@@ -829,6 +830,7 @@ function renderVersionControl(context = "app") {
 
 function applyThemeClass() {
   document.body.classList.toggle("dark-mode", darkModeEnabled);
+  document.body.classList.toggle("visit-log-mode", appModeSelected && activeTab === "visitLog");
 }
 
 function loadThemePreference() {
