@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260624-0012";
+const APP_VERSION = "20260630-0013";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -212,7 +212,7 @@ const triageSteps = [
   { id: "caller", title: "Caller and Call Context", render: renderCallerSection },
   { id: "concernSummary", title: "Caller Concern Summary", render: renderConcernSummarySection },
   { id: "triage", title: "Triage", render: renderTriageSection },
-  { id: "triageRouteAction", title: "Triage Route and Action", render: renderTriageRouteActionSection },
+  { id: "triageRouteAction", title: "Next Steps and Notice", render: renderTriageRouteActionSection },
 ];
 
 const repeatSteps = [
@@ -675,7 +675,7 @@ function getSteps() {
   if (!isRepeatOnlyMode()) return triageSteps;
   return [
     ...repeatSteps,
-    { id: "triageRouteAction", title: "Repeat Call Triage Route and Action", render: renderTriageRouteActionSection },
+    { id: "triageRouteAction", title: "Next Steps and Notice", render: renderTriageRouteActionSection },
   ];
 }
 
@@ -716,9 +716,6 @@ function renderApp() {
             ${renderWorkflow(current)}
           </div>
         </section>
-      </div>
-      <div class="floating-live-map">
-        ${renderLiveTriageMap()}
       </div>
       `}
       ${renderUrgencyGuideModal()}
@@ -762,13 +759,8 @@ function renderStartView() {
             <strong>I am logging a review</strong>
             <p class="start-option-note">Please use the link sent to your email to open the patient review log directly.</p>
           </button>
-          <button class="process-poster-alert" type="button" data-action="open-process-poster">
-            <span aria-hidden="true">i</span>
-            <strong>Martha's Rule call process</strong>
-          </button>
         </div>
       </div>
-      ${renderProcessPosterModal()}
     </main>
   `;
 }
@@ -1723,23 +1715,19 @@ function renderLocationSection() {
 
 function renderTriageRouteActionSection() {
   const urgency = currentRouteUrgency();
-  const route = calculateRoute(urgency);
-  const action = triageActionDetail(urgency);
-  const canCall = Boolean(action.phoneNumber);
   return `
-    <section class="route-action-panel ${urgencyClass(urgency)}-panel">
+    <section class="route-action-panel">
       <div class="route-category">
-        <span>Triage route and action</span>
-        <h3>Category: ${escapeHtml(categoryDisplayLabel(urgency))}</h3>
+        <span>Next steps</span>
+        <h3>Notification and handover</h3>
       </div>
-      <p class="route-route">${escapeHtml(route)}</p>
-      <p>${escapeHtml(action.instruction)}</p>
-      ${canCall ? "" : `<div class="route-reminder">Action reminder: ring the local team to inform them of the Martha's Rule call.</div>`}
+      <p class="route-route">${escapeHtml(triageOutcomeMessage(urgency))}</p>
+      <p>${escapeHtml(triageNextStepMessage(urgency))}</p>
+      <div class="route-reminder">Please ensure the respective ward is informed before you complete the notice.</div>
       <div class="route-actions">
-        ${canCall ? `<a class="btn primary" href="tel:${escapeHtml(action.phoneNumber)}">Call ${escapeHtml(action.callLabel)}</a>` : ""}
         <div class="route-action-stack">
           <button class="btn secondary notify-form-button ${isReadyForPrefilledForm() ? "ready-form" : ""}" type="button" data-action="open-ms-form" ${isReadyForPrefilledForm() ? "" : "disabled"}>
-            <span>Notify Local and PERRT Teams</span>
+            <span>Send Notice to Teams</span>
             <small>Open pre-filled NHS MS Form</small>
           </button>
           <button class="btn secondary" type="button" data-action="preview-email">Preview automated email</button>
@@ -1754,7 +1742,6 @@ function renderSummaryPanel() {
   if (isRepeatOnlyMode()) return renderRepeatSummaryPanel();
 
   const urgency = calculateUrgency();
-  const route = calculateRoute(urgency);
   const redFlagsPresent = state.triage.redFlags.some((item) => item !== "none");
 
   return `
@@ -1763,12 +1750,12 @@ function renderSummaryPanel() {
         <h2>Live summary</h2>
         <button class="summary-toggle" type="button" data-action="toggle-summary">${summaryCollapsed ? "Show" : "Hide"}</button>
       </div>
-      <button class="urgency ${urgencyClass(urgency)}" type="button" data-action="open-urgency-guide">${escapeHtml(categoryDisplayLabel(urgency))}</button>
+      ${summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency))}
       ${summaryCollapsed ? "" : `
       ${summaryRow("Core concern", primaryConcernFormValueForCategory(state.triage) || "Not selected")}
       ${summaryRow("Secondary concerns", listLabels(secondaryFactorOptions, state.triage.secondaryFactors))}
       ${summaryRow("Ward contacted", wardContactLabel(state.triage.wardContact))}
-      ${summaryRow("Suggested route", route)}
+      ${summaryRow("Next step", triageNextStepMessage(urgency))}
       ${summaryRow("Caller type", state.caller.callerType || "Not selected")}
       ${summaryRow("Repeat call", state.callDetails.repeatCall || "Not selected")}
       ${summaryRow("Ward / area", locationWardAreaDisplayValue() || "Not entered")}
@@ -1782,7 +1769,7 @@ function renderSummaryPanel() {
 
 function renderRepeatSummaryPanel() {
   const ready = isReadyForPrefilledForm();
-  const triageValue = repeatCallTriageFormValue();
+  const urgency = currentRouteUrgency();
 
   return `
     <div class="sticky">
@@ -1790,14 +1777,15 @@ function renderRepeatSummaryPanel() {
         <h2>Repeat-call summary</h2>
         <button class="summary-toggle" type="button" data-action="toggle-summary">${summaryCollapsed ? "Show" : "Hide"}</button>
       </div>
-      ${summaryCollapsed ? summaryRow("Triage code", triageValue || "Not selected") : `
+      ${summaryCollapsed ? summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency)) : `
       ${summaryRow("Repeat call", "Yes")}
       ${summaryRow("MRN", state.repeatCallUpdate.mrn || "Not entered")}
       ${summaryRow("Ward / area", repeatWardAreaDisplayValue() || "Not entered")}
       ${summaryRow("Bed number", state.repeatCallUpdate.bedNumber || "Not entered")}
       ${summaryRow("Caller", callerTypeFormLabel() || "Not selected")}
       ${summaryRow("Reason for repeat contact", state.repeatCallUpdate.additionalInformation || "Not entered")}
-      ${summaryRow("Triage code", triageValue || "Not selected")}
+      ${summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency))}
+      ${summaryRow("Next step", triageNextStepMessage(urgency))}
       ${summaryRow("Ready for submission", ready ? "Yes" : "No")}
       `}
     </div>
@@ -2492,6 +2480,26 @@ function triageActionDetail(urgency = calculateUrgency()) {
   };
 }
 
+function triageNeedsPerrtReview(urgency = currentRouteUrgency()) {
+  return urgency === "U1_immediate_emergency" || urgency === "U2_same_day_clinical";
+}
+
+function triageReviewRequiredLabel(urgency = currentRouteUrgency()) {
+  return triageNeedsPerrtReview(urgency) ? "Yes" : "No";
+}
+
+function triageOutcomeMessage(urgency = currentRouteUrgency()) {
+  return triageNeedsPerrtReview(urgency)
+    ? "From your triage, this call should be reviewed by PERRT."
+    : "From your triage, this call does not need review by PERRT.";
+}
+
+function triageNextStepMessage(urgency = currentRouteUrgency()) {
+  return triageNeedsPerrtReview(urgency)
+    ? "You may now contact the respective ward and click Send Notice to Teams. Please ensure you select the PERRT recipient for the review of the patient."
+    : "You may now contact the respective ward and click Send Notice to Teams for local follow-up.";
+}
+
 function urgencyClass(urgency) {
   if (urgency.startsWith("U1")) return "u1";
   if (urgency.startsWith("U2")) return "u2";
@@ -2798,7 +2806,6 @@ function otherWardRecipientEmailMissing() {
 
 function noticeRecipientFormValue() {
   const selected = state.triage.noticeRecipients || [];
-  if (!selected.length) return "";
   return combineEmailRecipients([MAIN_PERRT_EMAIL, ...selected]);
 }
 
@@ -3105,10 +3112,7 @@ Call category: ${categoryText}
     return;
   }
 
-  const originalUrgency = calculateUrgency();
   const urgency = activeFormUrgency();
-  const route = calculateRoute(urgency);
-  const action = triageActionDetail(urgency);
   const category = activeFormCategory();
   const exportedWardArea = activeTab === "visitLog" ? visitLogWardAreaDisplayValue() : locationWardAreaDisplayValue();
   const exportedBedNumber = activeTab === "visitLog" ? state.visitLog.location.bedNumber : state.location.bedNumber;
@@ -3134,7 +3138,7 @@ Call category: ${categoryText}
   const warningDetails = shouldShowWarningSignDetails(category) ? ` Red flags recorded: ${listLabels(redFlagOptions, category.redFlags)}${category.otherRedFlagText ? `; other warning sign: ${category.otherRedFlagText}` : ""}.` : "";
   state.generatedSummary = `A Martha's Rule call was answered on ${valueOr(state.callDetails.dateOfReferral)} at ${valueOr(state.callDetails.timePhoneAnswered)} by a caller recorded as ${callerType}. Repeat-call status was ${valueOr(state.callDetails.repeatCall, "not selected")}. The patient details recorded were ${patientDetails}. The patient was located at ${locationDetails}.
 
-Category: ${categoryDisplayLabel(urgency)}${state.visitLog.recategoriseCall === "yes" ? ` (re-categorised in patient review log from ${categoryDisplayLabel(originalUrgency)})` : ""}. Suggested route: ${route}. Recommended action: ${action.instruction}
+Triage note: ${triageOutcomeMessage(urgency)} ${triageNextStepMessage(urgency)}
 
 The core concern was ${concern}.${warningDetails} Secondary concerns recorded: ${secondaryConcerns}. Ward contact status was ${wardContactLabel(category.wardContact)}.
 
@@ -3185,7 +3189,8 @@ function buildStructuredSummaryHtml() {
         ${summarySectionHtml("Repeat Call Details", [
           summaryRowHtml("Why has the caller contacted the phoneline again?", state.repeatCallUpdate.additionalInformation),
           summaryRowHtml("Triage method", "Triage guidance"),
-          summaryRowHtml("Repeat-call triage category", triageValue),
+          summaryRowHtml("PERRT review indicated", triageReviewRequiredLabel(currentRouteUrgency())),
+          summaryRowHtml("Next step", triageNextStepMessage(currentRouteUrgency())),
         ])}
       </div>`;
   }
@@ -3236,11 +3241,10 @@ function buildStructuredSummaryHtml() {
         summaryRowHtml("Why did the caller use the phoneline?", secondaryConcernFormValueForCategory(category)),
         summaryRowHtml("Has the caller spoken to the ward?", wardContactLabel(category.wardContact)),
       ])}
-      ${summarySectionHtml("Triage Output", [
-        summaryRowHtml("Category of call", categoryOfCallLabel(category)),
-        summaryRowHtml("Assigned urgency category", categoryDisplayLabel(urgency)),
-        summaryRowHtml("Suggested route", calculateRoute(urgency)),
-        summaryRowHtml("Recommended action", triageActionDetail(urgency).instruction),
+      ${summarySectionHtml("Triage Note", [
+        summaryRowHtml("PERRT review indicated", triageReviewRequiredLabel(urgency)),
+        summaryRowHtml("Triage message", triageOutcomeMessage(urgency)),
+        summaryRowHtml("Next step", triageNextStepMessage(urgency)),
       ])}
       ${hasVisitLog ? summarySectionHtml("Patient Review Log", [
         summaryRowHtml("Learning Disability or Neurodiversity", state.patient.learningDisabilityNeurodiversity),
@@ -3354,8 +3358,6 @@ function generateCaseCode() {
 
 function buildRepeatCallEmailHtml() {
   const urgency = currentRouteUrgency();
-  const colours = urgencyEmailColours(urgency);
-  const triageCategory = repeatCallTriageFormValue();
 
   return `<div style="margin:0; padding:0; background:#ffffff;">
   <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background:#ffffff; width:100%;">
@@ -3388,12 +3390,12 @@ function buildRepeatCallEmailHtml() {
                 <td style="background:#ffffff; border:1px solid #d8dfca; border-top:none; padding:18px 20px;">
                   <p style="margin:0 0 12px 0; font-size:14px; line-height:20px;">Dear colleagues,</p>
                   <p style="margin:0 0 12px 0; font-size:14px; line-height:20px;">This is an automated notification to inform you that a <strong>repeat Martha's Rule call</strong> has been received for your clinical area.</p>
-                  <p style="margin:0; font-size:14px; line-height:20px;">The caller has contacted the phoneline again following a previous Martha's Rule call or related concern. The repeat call has been re-triaged based on the current information provided, and the outcome is shown below.</p>
+                  <p style="margin:0; font-size:14px; line-height:20px;">The caller has contacted the phoneline again following a previous Martha's Rule call or related concern. This notice shows the recorded repeat-call concern and the next notification step.</p>
                 </td>
               </tr>
               <tr>
                 <td style="background:#ffffff; border:1px solid #d8dfca; border-top:none; padding:14px 20px;">
-                  <div style="text-align:center; font-size:15px; line-height:20px; font-weight:700; color:#4F5F2F;">Repeat Call Triage Summary</div>
+                  <div style="text-align:center; font-size:15px; line-height:20px; font-weight:700; color:#4F5F2F;">Repeat Call Summary</div>
                 </td>
               </tr>
               <tr>
@@ -3409,8 +3411,7 @@ ${emailSegment("Patient & Location Details", [
   emailRow("Bed number", state.repeatCallUpdate.bedNumber),
 ])}
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
-${emailSegment("Current Concern Classification", [
-  emailRow("Acute or non-acute concern", categoryOfCallLabel(state.triage), true, { strong: true }),
+${emailSegment("Current Concern Details", [
   emailRow("Primary concern", repeatPrimaryConcernFormValue()),
   emailRow("Secondary driver for escalation", repeatSecondaryConcernFormValue(), true),
   emailRow("Has the caller already contacted the ward/local team?", wardContactLabel(state.triage.wardContact), false, { strong: true }),
@@ -3420,26 +3421,21 @@ ${emailSegment("Current Repeat Call Update", [
   emailRow("Why has the caller contacted the phoneline again?", state.repeatCallUpdate.additionalInformation, false, { vertical: true, wrap: true }),
 ]).replace(/#007A78/g, "#4F5F2F").replace(/#d9e7e7/g, "#d8dfca").replace(/#C9DEDC/g, "#c7d2b4")}
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
-                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0; width:100%; border:2px solid ${colours.accent}; border-radius:14px;">
+                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0; width:100%; border:2px solid #4F5F2F; border-radius:14px;">
                     <tbody>
                       <tr>
-                        <td style="padding:14px 16px; font-weight:700; color:${colours.text}; background:${colours.accent}; border-radius:12px 12px 0 0;">Repeat Call Triaging Output</td>
+                        <td style="padding:14px 16px; font-weight:700; color:#ffffff; background:#4F5F2F; border-radius:12px 12px 0 0;">Repeat Call Triage Note</td>
                       </tr>
                       <tr>
-                        <td style="padding:24px 18px; background:${colours.bg}; text-align:center; border-top:1px solid #d9e7e7;">
-                          <div style="font-size:13px; line-height:18px; color:${colours.label}; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Assigned urgency category</div>
-                          <div style="display:inline-block; margin-top:10px; padding:16px 34px; background:${colours.accent}; color:${colours.text}; font-size:34px; line-height:40px; font-weight:700; border-radius:16px; letter-spacing:1px;">${emailCell(triageCategory, categoryDisplayLabel(urgency))}</div>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="padding:0;">
-${urgencyGuideEmailHtml()}
+                        <td style="padding:18px; background:#F7FAF1; border-top:1px solid #d9e7e7;">
+                          <div style="font-size:14px; line-height:20px; font-weight:700; color:#334155;">${emailCell(triageOutcomeMessage(urgency))}</div>
+                          <div style="margin-top:10px; font-size:13px; line-height:19px; color:#1a1a1a;">${emailCell(triageNextStepMessage(urgency))}</div>
                         </td>
                       </tr>
                     </tbody>
                   </table>
                   <div style="margin-top:16px; padding:14px 16px; background:#F7FAF1; border:1px solid #d8dfca; border-left:6px solid #4F5F2F; border-radius:14px;">
-                    <p style="margin:0; font-size:13px; line-height:18px; color:#1a1a1a;">This is a <strong>repeat Martha's Rule call</strong>. Please review the current concern locally, ensure the patient or family receives a clear update, and identify any follow-up actions required. For <strong>U1</strong> and <strong>U2</strong> calls, PERRT will attend to review the patient and a further assessment notification will follow.</p>
+                    <p style="margin:0; font-size:13px; line-height:18px; color:#1a1a1a;">This is a <strong>repeat Martha's Rule call</strong>. Please review the current concern locally, ensure the patient or family receives a clear update, and identify any follow-up actions required.</p>
                   </div>
                   <p style="margin:14px 0 0 0; font-size:13px; line-height:18px;">Best wishes,<br><span style="color:#0b3d3c;">Martha's Rule Steering Group &amp; PERRT</span></p>
                   <p style="margin:10px 0 0 0; font-size:11px; line-height:16px; color:#666666;">This email is generated automatically from a Martha's Rule repeat call record. Please do not reply to this message unless you have been advised to do so.</p>
@@ -3570,7 +3566,6 @@ function generateHtmlEmail() {
   }
 
   const urgency = calculateUrgency();
-  const colours = urgencyEmailColours(urgency);
   const category = state.triage;
   const isRepeat = isRepeatOnlyMode();
   const ward = isRepeat ? repeatWardAreaDisplayValue() : locationWardAreaDisplayValue();
@@ -3582,7 +3577,6 @@ function generateHtmlEmail() {
   const secondaryConcern = isRepeat ? "" : secondaryConcernFormValueForCategory(category);
   const wardContact = isRepeat ? "" : wardContactLabel(category.wardContact);
   const formLink = buildMicrosoftFormUrl();
-  const triageCategory = isRepeat ? repeatCallTriageFormValue() : microsoftFormTriageCategoryLabel(urgency);
 
   state.generatedEmailHtml = `<div style="margin:0; padding:0; background:#ffffff;">
   <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; background:#ffffff; width:100%;">
@@ -3600,12 +3594,12 @@ function generateHtmlEmail() {
               <tr>
                 <td style="background:#ffffff; border:1px solid #d9e7e7; border-top:none; padding:18px 20px;">
                   <p style="margin:0 0 12px 0; font-size:14px; line-height:20px;">Dear colleagues,</p>
-                  <p style="margin:0; font-size:14px; line-height:20px;">This is an automated notification to inform you that a <strong>Martha's Rule call</strong> has been placed in your clinical area and that we have spoken to the patient. Based on the information provided by the patient, we have triaged the call, and the outcome is shown below.</p>
+                  <p style="margin:0; font-size:14px; line-height:20px;">This is an automated notification to inform you that a <strong>Martha's Rule call</strong> has been placed in your clinical area and that we have spoken to the patient. This notice shows the recorded concern and the next notification step.</p>
                 </td>
               </tr>
               <tr>
                 <td style="background:#ffffff; border:1px solid #d9e7e7; border-top:none; padding:14px 20px;">
-                  <div style="text-align:center; font-size:15px; line-height:20px; font-weight:700; color:#005E5C;">Martha's Rule Call Triage Summary</div>
+                  <div style="text-align:center; font-size:15px; line-height:20px; font-weight:700; color:#005E5C;">Martha's Rule Call Summary</div>
                 </td>
               </tr>
               <tr>
@@ -3644,24 +3638,16 @@ ${emailSegment("Caller Concern", [
                                   <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%;">
                                     <tbody>
                                       <tr>
-                                        <td style="padding:12px; font-weight:700; color:#ffffff; background:#007A78; border-radius:12px 12px 0 0;">Triaging Output</td>
+                                        <td style="padding:12px; font-weight:700; color:#ffffff; background:#007A78; border-radius:12px 12px 0 0;">Triage Note</td>
                                       </tr>
                                       <tr>
-                                        <td style="padding:18px; background:${colours.bg}; text-align:center; border-top:1px solid #d9e7e7; border-left:2px solid ${colours.accent}; border-right:2px solid ${colours.accent};">
-                                          <div style="font-size:12px; line-height:18px; color:${colours.label}; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;">Category of call</div>
-                                          <div style="font-size:14px; line-height:20px; color:${colours.label}; font-weight:700; margin-top:6px;">${emailCell(categoryOfCallLabel(category))}</div>
-                                          <div style="font-size:12px; line-height:18px; color:${colours.label}; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; margin-top:10px;">Assigned urgency category</div>
-                                          <div style="display:inline-block; margin-top:10px; padding:18px 38px; background:${colours.accent}; color:${colours.text}; font-size:38px; line-height:44px; font-weight:700; border-radius:18px; letter-spacing:1px;">${emailCell(triageCategory, categoryDisplayLabel(urgency))}</div>
+                                        <td style="padding:18px; background:#F7FBFB; border-top:1px solid #d9e7e7;">
+                                          <div style="font-size:14px; line-height:20px; font-weight:700; color:#334155;">${emailCell(triageOutcomeMessage(urgency))}</div>
+                                          <div style="margin-top:10px; font-size:13px; line-height:19px; color:#1a1a1a;">${emailCell(triageNextStepMessage(urgency))}</div>
                                         </td>
                                       </tr>
                                     </tbody>
                                   </table>
-                                  <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%; font-size:13px;">
-                                    <tbody>
-${emailRow("Is this call about acute deterioration?", categoryOfCallLabel(category), false, { strong: true })}
-                                    </tbody>
-                                  </table>
-${urgencyGuideEmailHtml()}
                                 </td>
                               </tr>
                             </tbody>
@@ -3671,7 +3657,7 @@ ${urgencyGuideEmailHtml()}
                     </tbody>
                   </table>
                   <div style="margin-top:16px; padding:14px 16px; background:#F7FBFB; border:1px solid #BFDCDC; border-left:6px solid #007A78; border-radius:14px;">
-                    <p style="margin:0; font-size:13px; line-height:18px; color:#1a1a1a;">For <strong>U1</strong> and <strong>U2</strong> calls, PERRT will attend to review the patient. Once this has happened, you will receive another email with the details of the assessment. For <strong>U3, U4 and U5</strong> calls, the concern should be reviewed and followed up by the local team as appropriate.</p>
+                    <p style="margin:0; font-size:13px; line-height:18px; color:#1a1a1a;">Please contact the respective ward and use the notice process to inform the local team. If the patient requires PERRT review, please ensure you select the PERRT recipient when sending the notice.</p>
                   </div>
                   <div style="margin-top:16px; padding:16px 18px; background:#F3FBFB; border:1px solid #BFDCDC; border-left:6px solid #007A78; border-radius:14px;">
                     <p style="margin:0 0 10px 0; font-size:14px; font-weight:700; color:#003F3D;">Debrief / review form</p>
@@ -3719,8 +3705,6 @@ function buildCsvRows() {
   }
 
   const urgency = activeFormUrgency();
-  const route = calculateRoute(urgency);
-  const action = triageActionDetail(urgency);
   const category = activeFormCategory();
 
   return [
@@ -3746,9 +3730,9 @@ function buildCsvRows() {
     ["Location", "Specialty / Medical team", state.location.specialtyMedicalTeam],
     ["Caller", "Caller type", state.caller.callerType],
     ["Patient review log", "Re-categorised in patient review log", state.visitLog.recategoriseCall],
-    ["Triage", "Urgency", categoryDisplayLabel(urgency)],
-    ["Triage", "Suggested route", route],
-    ["Triage", "Recommended action", action.instruction],
+    ["Triage", "PERRT review indicated", triageReviewRequiredLabel(urgency)],
+    ["Triage", "Triage message", triageOutcomeMessage(urgency)],
+    ["Triage", "Next step", triageNextStepMessage(urgency)],
     ["Triage", "Acute deterioration", category.acuteDeterioration],
     ["Triage", "Red flags", listLabels(redFlagOptions, category.redFlags)],
     ["Triage", "Core concern", primaryConcernFormValueForCategory(category)],
