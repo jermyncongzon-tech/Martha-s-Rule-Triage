@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260701-0016";
+const APP_VERSION = "20260701-0017";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -1245,8 +1245,7 @@ function renderMrnAddLaterWarningModal() {
 function renderVisitLogReviewConfirmModal() {
   if (!visitLogReviewConfirmOpen || activeTab !== "visitLog") return "";
 
-  const reviewBedNumber = state.visitLog.location.bedNumber || "Not provided";
-  const callerConcernSummary = state.visitLog.handover?.callerConcernSummary?.trim() || "Not provided";
+  const reviewWardArea = visitLogWardAreaDisplayValue() || "Not provided";
 
   return `
     <div class="modal-backdrop visit-log-review-backdrop" data-modal-lock="visit-log-review-confirm">
@@ -1254,27 +1253,24 @@ function renderVisitLogReviewConfirmModal() {
         <div class="modal-header visit-log-review-header">
           <div>
             <h2 id="visit-log-review-title">Confirm patient before continuing</h2>
-            <p id="visit-log-review-description">Please pause and verify this pre-filled detail before you continue with your patient review.</p>
+            <p id="visit-log-review-description">Please pause and verify these pre-filled details before you continue with your patient review.</p>
           </div>
         </div>
         <div class="epic-copy-modal-body visit-log-review-body">
-          <div class="visit-log-review-mrn-card">
-            <span>MRN</span>
-            <strong>${escapeHtml(state.patient.mrn || "Not provided")}</strong>
+          <div class="visit-log-review-table" role="presentation">
+            <div class="visit-log-review-table-row">
+              <span>MRN</span>
+              <strong>${escapeHtml(state.patient.mrn || "Not provided")}</strong>
+            </div>
+            <div class="visit-log-review-table-row">
+              <span>Clinical area</span>
+              <strong>${escapeHtml(reviewWardArea)}</strong>
+            </div>
           </div>
-          <div class="visit-log-review-grid">
-            ${summaryRow("Bed number", reviewBedNumber)}
-            ${summaryRow("Caller concern summary", callerConcernSummary)}
-          </div>
-          <label class="visit-log-review-check" data-action="toggle-visit-log-review-check">
-            <input type="checkbox" ${visitLogReviewConfirmChecked ? "checked" : ""} data-action="toggle-visit-log-review-check" />
-            <span>I have checked the patient details and this is the correct patient to review.</span>
-          </label>
         </div>
-        <div class="email-preview-actions">
-          <button class="btn secondary" type="button" data-action="reject-visit-log-review">This is not the patient</button>
-          <button class="btn secondary" type="button" data-action="close-visit-log-review-app">Close app</button>
-          <button class="btn primary" type="button" data-action="confirm-visit-log-review" ${visitLogReviewConfirmChecked ? "" : "disabled"}>Continue to patient review log</button>
+        <div class="email-preview-actions visit-log-review-actions">
+          <button class="btn danger" type="button" data-action="reject-visit-log-review">This is not the patient</button>
+          <button class="btn primary" type="button" data-action="confirm-visit-log-review">Confirm this is the patient</button>
         </div>
       </section>
     </div>

@@ -2548,76 +2548,76 @@ textarea:focus {
   gap: 16px;
 }
 
-.visit-log-review-mrn-card {
-  align-items: center;
+.visit-log-review-table {
   background: #ffffff;
   border: 2px solid #fca5a5;
   border-radius: 16px;
   box-shadow: 0 18px 40px rgba(185, 28, 28, 0.16);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 22px 18px;
-  text-align: center;
+  overflow: hidden;
 }
 
-.visit-log-review-mrn-card span {
+.visit-log-review-table-row {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: minmax(140px, 180px) 1fr;
+}
+
+.visit-log-review-table-row + .visit-log-review-table-row {
+  border-top: 1px solid #fecaca;
+}
+
+.visit-log-review-table-row span,
+.visit-log-review-table-row strong {
+  padding: 18px 20px;
+}
+
+.visit-log-review-table-row span {
+  align-items: center;
+  background: #fef2f2;
   color: #991b1b;
-  font-size: 0.82rem;
+  display: flex;
+  font-size: 0.9rem;
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.visit-log-review-mrn-card strong {
-  color: #7f1d1d;
-  font-size: clamp(1.9rem, 4vw, 2.5rem);
-  font-weight: 950;
-  letter-spacing: 0.06em;
-}
-
-.visit-log-review-grid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: 1fr;
-}
-
-.visit-log-review-grid .summary-row {
-  background: #fff5f5;
-  border: 1px solid #fecaca;
-  border-radius: 12px;
-  min-height: 80px;
-  padding: 14px 16px;
-}
-
-.visit-log-review-grid .summary-row span {
-  color: #991b1b;
-}
-
-.visit-log-review-grid .summary-row strong {
+.visit-log-review-table-row strong {
+  align-items: center;
+  background: #ffffff;
   color: #111827;
-}
-
-.visit-log-review-check {
-  align-items: flex-start;
-  background: #fef2f2;
-  border: 1px solid #fca5a5;
-  border-radius: 12px;
-  color: #111827;
-  cursor: pointer;
   display: flex;
-  gap: 12px;
-  line-height: 1.5;
-  padding: 14px 16px;
+  font-size: 1.25rem;
+  font-weight: 900;
+  justify-content: flex-end;
+  text-align: right;
 }
 
-.visit-log-review-check input {
-  flex: 0 0 auto;
-  margin-top: 3px;
+.visit-log-review-actions {
+  justify-content: space-between;
 }
 
-.visit-log-review-check span {
-  font-weight: 700;
+.visit-log-review-actions .btn {
+  flex: 1 1 0;
+}
+
+.visit-log-review-actions .btn.primary {
+  background: #15803d;
+  border-color: #15803d;
+}
+
+.visit-log-review-actions .btn.primary:hover {
+  background: #166534;
+}
+
+.visit-log-review-actions .btn.danger {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+.visit-log-review-actions .btn.danger:hover {
+  background: #fecaca;
 }
 
 .modal-backdrop {
