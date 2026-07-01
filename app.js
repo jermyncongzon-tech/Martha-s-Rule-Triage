@@ -744,9 +744,6 @@ function renderStartView() {
             <p class="start-app-title">Martha's Rule Call Triage and Patient Review Log</p>
             ${renderVersionControl("start")}
           </div>
-          <div class="start-header-actions">
-            <img class="start-logo" src="assets/UCLH logo colour 2.jpg" alt="UCLH" />
-          </div>
         </header>
         <h1 id="start-title">What are we doing today?</h1>
         <div class="start-options">
@@ -793,9 +790,6 @@ function renderHeader() {
       </div>
       <div class="header-progress">
         ${renderProgress()}
-      </div>
-      <div class="header-actions">
-        <img class="uclh-logo" src="assets/UCLH logo colour 2.jpg" alt="UCLH" />
       </div>
     </header>
   `;
