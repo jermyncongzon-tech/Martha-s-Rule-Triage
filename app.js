@@ -1,9 +1,8 @@
 const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
-const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260701-0021";
+const APP_VERSION = "20260701-0022";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -2998,27 +2997,9 @@ function buildVisitLogMicrosoftFormParams() {
 
 function buildMicrosoftFormUrl() {
   const isVisitLogForm = activeTab === "visitLog";
-  const url = new URL(isVisitLogForm ? VISIT_LOG_MICROSOFT_FORM_BASE : isRepeatOnlyMode() ? REPEAT_CALL_MICROSOFT_FORM_BASE : TRIAGE_MICROSOFT_FORM_BASE);
+  const url = new URL(isVisitLogForm ? VISIT_LOG_MICROSOFT_FORM_BASE : TRIAGE_MICROSOFT_FORM_BASE);
   const category = activeFormCategory();
-  const repeatNeedsNewTriage = isRepeatOnlyMode();
-  const params = isVisitLogForm ? buildVisitLogMicrosoftFormParams() : isRepeatOnlyMode() ? [
-    ["rff640b50907e4142a1e360afb33e371f", quotedIfPresent(state.callDetails.dateOfReferral)],
-    ["re2b4e9868e8942ff83bf8d2b484c69c4", timeOnlyValue(state.callDetails.timePhoneAnswered)],
-    ["ref35f99c7c104e08a9af944152a0a5e8", rawValue(state.patient.mrn)],
-    ["r6d09e72e812240b391120a05fb35a6f6", rawValue(locationWardAreaDisplayValue())],
-    ["r921b163e08504719a2ed5d8f3c6f2c5a", rawValue(triageAdditionalNoticeRecipientValue())],
-    ["re1d84546055d436387419c3cb7a47bb2", rawValue(state.location.bedNumber)],
-    ["r01e81a35b1e24e57a307587bab42889b", rawValue(state.concernSummary.concernsSummary)],
-    ["r8aab0291954d4b8684b369e5d12f676a", rawValue(repeatNeedsNewTriage ? categoryOfCallLabel(state.triage) : "")],
-    ["rf36cd4f03a7546cb9200d7ee9bb2e376", rawValue(repeatCallTriageFormValue())],
-    ["rb37f628fa1df45509b9f815070bd75ea", rawValue(repeatNeedsNewTriage ? nhseNonAcuteCategoryFormValue(state.triage) : "")],
-    ["r44e90607199444148433fa44cbf58d03", rawValue(noticeRecipientFormValue())],
-    ["r816d6d1b2ee44cc9a8dbb1f35fe4ac52", rawValue(repeatNeedsNewTriage ? repeatPrimaryConcernFormValue() : "")],
-    ["rb7b9a0f743644c7ea5d74c1432bacc01", rawValue(repeatNeedsNewTriage ? repeatSecondaryConcernFormValue() : "")],
-    ["r2ad6783656c3484383ac51ccbcf951bc", rawValue(repeatNeedsNewTriage ? wardContactLabel(state.triage.wardContact) : "")],
-    ["r0369039bf69e471c8fcf2908c5c29f08", quotedIfPresent(callerTypeFormLabel())],
-    ["r0d0af8d8e7a8434c83ae750e5ac84b7d", quotedIfPresent(delayAnsweringLabel())],
-  ] : [
+  const params = isVisitLogForm ? buildVisitLogMicrosoftFormParams() : [
     ["re469facce77445b4b414e2fdeb7d1479", quotedIfPresent(state.callDetails.dateOfReferral)],
     ["r4e0568f047ea4b139191076ec5fb6af4", timeOnlyValue(state.callDetails.timePhoneAnswered)],
     ["r858d5537b5764dbeb0ebcaeb54458c13", quotedIfPresent(delayAnsweringLabel())],
