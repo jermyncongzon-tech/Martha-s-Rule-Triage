@@ -1,6 +1,5 @@
 const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
-const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
@@ -942,6 +941,9 @@ function renderVisitLogCallCategorySection() {
   return `
     <section class="visit-log-section">
       <h3>Call category</h3>
+      <div class="section-intro">
+        This lets you confirm whether the earlier call category was right or wrong after you have seen and reviewed the patient. If needed, you can change the earlier category here for record purposes.
+      </div>
       <div class="field-grid">
         ${radioGroup("Do you need to re-categorise this call?", "visitLog.recategoriseCall", [["yes", "Yes"], ["no", "No"]])}
       </div>
@@ -1641,10 +1643,10 @@ function renderNoticeRecipientModal() {
         </div>
         <div class="notice-recipient-body">
           <div class="notice">
-            This email will be cascaded to recipients linked to the clinical area you have chosen. These are managers, deputy matrons and matrons. The PERRT team email will also be an automatic recipient to this notice. Should you wish to identify a PERRT nurse, you may do so by clicking their name.
+            Please choose the PERRT nurse who may review the patient. They will receive a link to the review form.
           </div>
           <div class="notice">
-            Who should this notice go to apart from the PERRT shared email?
+            Which PERRT recipient or recipients should this notice go to?
           </div>
           <div class="recipient-hierarchy">
             ${lead ? `
@@ -2521,7 +2523,7 @@ function triageReviewRequiredLabel(urgency = currentRouteUrgency()) {
 function triageOutcomeMessage(urgency = currentRouteUrgency()) {
   return triageNeedsPerrtReview(urgency)
     ? "From your triage, this call should be reviewed by PERRT."
-    : "From your triage, this call does not need review by PERRT.";
+    : "";
 }
 
 function triageNextStepMessage(urgency = currentRouteUrgency()) {
@@ -2723,7 +2725,9 @@ function acuteBucketLabel() {
 
 function secondaryFormValue(category = activeFormCategory()) {
   const factors = listLabels(secondaryFactorOptions, effectiveSecondaryFactors(category));
-  return factors === "None selected" ? "" : factors;
+  if (factors !== "None selected") return factors;
+  if (category.genuineWorry === "yes") return "Patient/family genuinely worried about the patient";
+  return "";
 }
 
 function effectiveSecondaryFactors(category = activeFormCategory()) {
@@ -2836,7 +2840,7 @@ function otherWardRecipientEmailMissing() {
 
 function noticeRecipientFormValue() {
   const selected = state.triage.noticeRecipients || [];
-  return combineEmailRecipients([MAIN_PERRT_EMAIL, ...selected]);
+  return combineEmailRecipients(selected);
 }
 
 function combineEmailRecipients(values) {
