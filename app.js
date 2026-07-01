@@ -1710,6 +1710,7 @@ function renderTriageRouteActionSection() {
         <span>Next steps</span>
         <h3>Notification and handover</h3>
       </div>
+      <p class="route-route">Urgency code: ${escapeHtml(categoryDisplayLabel(urgency))}</p>
       <p class="route-route">${escapeHtml(triageOutcomeMessage(urgency))}</p>
       <p>${escapeHtml(triageNextStepMessage(urgency))}</p>
       <div class="route-reminder">Please ensure the respective ward is informed before you complete the notice.</div>
@@ -1739,6 +1740,7 @@ function renderSummaryPanel() {
         <h2>Live summary</h2>
         <button class="summary-toggle" type="button" data-action="toggle-summary">${summaryCollapsed ? "Show" : "Hide"}</button>
       </div>
+      ${summaryRow("Urgency code", categoryDisplayLabel(urgency))}
       ${summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency))}
       ${summaryCollapsed ? "" : `
       ${summaryRow("Core concern", primaryConcernFormValueForCategory(state.triage) || "Not selected")}
@@ -1766,13 +1768,14 @@ function renderRepeatSummaryPanel() {
         <h2>Repeat-call summary</h2>
         <button class="summary-toggle" type="button" data-action="toggle-summary">${summaryCollapsed ? "Show" : "Hide"}</button>
       </div>
-      ${summaryCollapsed ? summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency)) : `
+      ${summaryCollapsed ? `${summaryRow("Urgency code", categoryDisplayLabel(urgency))}${summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency))}` : `
       ${summaryRow("Repeat call", "Yes")}
       ${summaryRow("MRN", state.repeatCallUpdate.mrn || "Not entered")}
       ${summaryRow("Ward / area", repeatWardAreaDisplayValue() || "Not entered")}
       ${summaryRow("Bed number", state.repeatCallUpdate.bedNumber || "Not entered")}
       ${summaryRow("Caller", callerTypeFormLabel() || "Not selected")}
       ${summaryRow("Reason for repeat contact", state.repeatCallUpdate.additionalInformation || "Not entered")}
+      ${summaryRow("Urgency code", categoryDisplayLabel(urgency))}
       ${summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency))}
       ${summaryRow("Next step", triageNextStepMessage(urgency))}
       ${summaryRow("Ready for submission", ready ? "Yes" : "No")}
