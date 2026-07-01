@@ -3,7 +3,7 @@ const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260701-0020";
+const APP_VERSION = "20260701-0021";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -673,20 +673,13 @@ function isRepeatOnlyMode() {
 }
 
 function getSteps() {
-  if (!isRepeatOnlyMode()) return triageSteps;
-  return [
-    ...repeatSteps,
-    { id: "triageRouteAction", title: "Next Steps and Notice", render: renderTriageRouteActionSection },
-  ];
+  return triageSteps;
 }
 
 function normalizeCurrentStep() {
   const steps = getSteps();
   if (state.currentStep >= steps.length) state.currentStep = steps.length - 1;
   if (state.currentStep < 0) state.currentStep = 0;
-  if (isRepeatOnlyMode() && state.currentStep > 1 && !repeatCallUpdateIsComplete()) {
-    state.currentStep = 1;
-  }
   if (state.currentVisitStep >= visitLogSteps.length) state.currentVisitStep = visitLogSteps.length - 1;
   if (state.currentVisitStep < 0) state.currentVisitStep = 0;
 }
@@ -1156,7 +1149,7 @@ function repeatCallUpdateIsComplete() {
 }
 
 function renderGeneratedOutputs() {
-  const summaryMrn = activeTab === "visitLog" ? state.patient.mrn : (isRepeatOnlyMode() ? state.repeatCallUpdate.mrn : state.patient.mrn);
+  const summaryMrn = state.patient.mrn;
   return `
     ${state.generatedSummaryHtml ? `
       <section class="generated-summary rich-summary-panel">
@@ -1189,7 +1182,7 @@ function renderGeneratedOutputs() {
 
 function renderEpicCopyConfirmModal() {
   if (!epicCopyConfirmOpen) return "";
-  const summaryMrn = activeTab === "visitLog" ? state.patient.mrn : (isRepeatOnlyMode() ? state.repeatCallUpdate.mrn : state.patient.mrn);
+  const summaryMrn = state.patient.mrn;
   return `
     <div class="modal-backdrop">
       <section class="epic-copy-modal" role="dialog" aria-modal="true" aria-labelledby="epic-copy-title">
@@ -1299,7 +1292,7 @@ function renderCallDetailsSection() {
       ${radioGroup("Is this a repeat call?", "callDetails.repeatCall", [["yes", "Yes"], ["no", "No"]])}
     </div>
     ${state.callDetails.repeatCall === "yes" ? `
-      <div class="notice">Repeat call selected. The workflow will capture the repeat-call update details.</div>
+      <div class="notice">Repeat call selected. Please continue through the full call triage pathway so the repeat call record captures the same patient, location and concern details as the original call pathway.</div>
     ` : ""}
   `;
 }
@@ -1580,7 +1573,7 @@ function renderWardContactModal() {
 
 function renderOtherWardEmailModal() {
   if (!otherWardEmailModalOpen) return "";
-  const recipientPath = activeTab === "visitLog" ? "visitLog.notifications.otherEmails" : isRepeatOnlyMode() ? "repeatCallUpdate.otherWardRecipientEmails" : "location.otherWardRecipientEmails";
+  const recipientPath = activeTab === "visitLog" ? "visitLog.notifications.otherEmails" : "location.otherWardRecipientEmails";
 
   return `
     <div class="modal-backdrop">
@@ -1810,11 +1803,12 @@ function renderRepeatSummaryPanel() {
       </div>
       ${summaryCollapsed ? `${summaryRow("Urgency code", categoryDisplayLabel(urgency))}${summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency))}` : `
       ${summaryRow("Repeat call", "Yes")}
-      ${summaryRow("MRN", state.repeatCallUpdate.mrn || "Not entered")}
-      ${summaryRow("Ward / area", repeatWardAreaDisplayValue() || "Not entered")}
-      ${summaryRow("Bed number", state.repeatCallUpdate.bedNumber || "Not entered")}
+      ${summaryRow("MRN", state.patient.mrn || "Not entered")}
+      ${summaryRow("Date of birth", formatDateForEmail(state.patient.dob) || "Not entered")}
+      ${summaryRow("Ward / area", locationWardAreaDisplayValue() || "Not entered")}
+      ${summaryRow("Bed number", state.location.bedNumber || "Not entered")}
       ${summaryRow("Caller", callerTypeFormLabel() || "Not selected")}
-      ${summaryRow("Reason for repeat contact", state.repeatCallUpdate.additionalInformation || "Not entered")}
+      ${summaryRow("Caller concern summary", state.concernSummary.concernsSummary || "Not entered")}
       ${summaryRow("Urgency code", categoryDisplayLabel(urgency))}
       ${summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency))}
       ${summaryRow("Next step", triageNextStepMessage(urgency))}
@@ -2181,7 +2175,6 @@ function renderEmailPreviewModal() {
 
 function epicSummaryMrnValue() {
   if (activeTab === "visitLog") return state.patient.mrn || "";
-  if (isRepeatOnlyMode()) return state.repeatCallUpdate.mrn || "";
   return state.patient.mrn || "";
 }
 
@@ -2546,10 +2539,10 @@ function calculateCompleteness() {
       { label: "Call date and phone answer time", done: Boolean(state.callDetails.dateOfReferral && state.callDetails.timePhoneAnswered) },
       { label: "Repeat-call branch answered", done: Boolean(state.callDetails.repeatCall) },
       { label: "Caller type recorded", done: Boolean(state.caller.callerType) },
-      { label: "Patient MRN entered", done: Boolean(state.repeatCallUpdate.mrn) },
-    { label: "Ward / area entered", done: wardAreaComplete(state.repeatCallUpdate.wardArea, state.repeatCallUpdate.wardAreaOther) },
+      { label: "Patient MRN entered", done: Boolean(state.patient.mrn) },
+      { label: "Ward / area entered", done: wardAreaComplete(state.location.wardArea, state.location.wardAreaOther) },
       { label: "Repeat-call triage completed", done: triageCategoryIsComplete(state.triage) },
-      { label: "Reason for repeat contact entered", done: Boolean(state.repeatCallUpdate.additionalInformation) },
+      { label: "Caller concern summary entered", done: Boolean(state.concernSummary.concernsSummary) },
     ];
   }
 
@@ -2824,13 +2817,11 @@ function wardAreaComplete(wardArea, otherWardArea) {
 
 function otherWardRecipientEmailRequired() {
   if (activeTab === "visitLog") return state.visitLog.location.wardArea === "Other";
-  if (isRepeatOnlyMode()) return state.repeatCallUpdate.wardArea === "Other";
   return activeTab === "triage" && state.location.wardArea === "Other";
 }
 
 function otherWardRecipientEmailValue() {
   if (activeTab === "visitLog") return state.visitLog.notifications.otherEmails || "";
-  if (isRepeatOnlyMode()) return state.repeatCallUpdate.otherWardRecipientEmails || "";
   return state.location.otherWardRecipientEmails || "";
 }
 
@@ -2853,10 +2844,6 @@ function combineEmailRecipients(values) {
 
 function triageAdditionalNoticeRecipientValue() {
   return state.location.wardArea === "Other" ? combineEmailRecipients([state.location.otherWardRecipientEmails]) : "";
-}
-
-function repeatAdditionalNoticeRecipientValue() {
-  return state.repeatCallUpdate.wardArea === "Other" ? combineEmailRecipients([state.repeatCallUpdate.otherWardRecipientEmails]) : "";
 }
 
 function delayAnsweringLabel() {
@@ -3017,11 +3004,11 @@ function buildMicrosoftFormUrl() {
   const params = isVisitLogForm ? buildVisitLogMicrosoftFormParams() : isRepeatOnlyMode() ? [
     ["rff640b50907e4142a1e360afb33e371f", quotedIfPresent(state.callDetails.dateOfReferral)],
     ["re2b4e9868e8942ff83bf8d2b484c69c4", timeOnlyValue(state.callDetails.timePhoneAnswered)],
-    ["ref35f99c7c104e08a9af944152a0a5e8", rawValue(state.repeatCallUpdate.mrn)],
-    ["r6d09e72e812240b391120a05fb35a6f6", rawValue(repeatWardAreaDisplayValue())],
-    ["r921b163e08504719a2ed5d8f3c6f2c5a", rawValue(repeatAdditionalNoticeRecipientValue())],
-    ["re1d84546055d436387419c3cb7a47bb2", rawValue(state.repeatCallUpdate.bedNumber)],
-    ["r01e81a35b1e24e57a307587bab42889b", rawValue(state.repeatCallUpdate.additionalInformation)],
+    ["ref35f99c7c104e08a9af944152a0a5e8", rawValue(state.patient.mrn)],
+    ["r6d09e72e812240b391120a05fb35a6f6", rawValue(locationWardAreaDisplayValue())],
+    ["r921b163e08504719a2ed5d8f3c6f2c5a", rawValue(triageAdditionalNoticeRecipientValue())],
+    ["re1d84546055d436387419c3cb7a47bb2", rawValue(state.location.bedNumber)],
+    ["r01e81a35b1e24e57a307587bab42889b", rawValue(state.concernSummary.concernsSummary)],
     ["r8aab0291954d4b8684b369e5d12f676a", rawValue(repeatNeedsNewTriage ? categoryOfCallLabel(state.triage) : "")],
     ["rf36cd4f03a7546cb9200d7ee9bb2e376", rawValue(repeatCallTriageFormValue())],
     ["rb37f628fa1df45509b9f815070bd75ea", rawValue(repeatNeedsNewTriage ? nhseNonAcuteCategoryFormValue(state.triage) : "")],
@@ -3066,6 +3053,9 @@ function buildMicrosoftFormUrl() {
   params.forEach(([key, value]) => {
     if (value !== "") url.searchParams.set(key, value);
   });
+
+  // Add a unique token on every open so the browser treats each form launch as a fresh URL.
+  url.searchParams.set("_openToken", `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
 
   return url.toString().replace(/\+/g, "%20");
 }
@@ -3119,9 +3109,7 @@ function openPrefilledMicrosoftFormWithoutPrompt() {
 
 function generateStructuredSummary() {
   if (isRepeatOnlyMode()) {
-    const triageCode = repeatCallTriageFormValue();
-    const triageSummary = `The repeat-call triage code was assigned through triage guidance as ${triageCode || "not selected"}.`;
-    state.generatedSummary = `This is a repeat Martha's Rule call received on ${valueOr(state.callDetails.dateOfReferral)} at ${valueOr(state.callDetails.timePhoneAnswered)} by a caller recorded as ${valueOr(callerTypeFormLabel(), "not selected")}. The patient is recorded as MRN ${valueOr(state.repeatCallUpdate.mrn)}, located on ${valueOr(repeatWardAreaDisplayValue())}${state.repeatCallUpdate.bedNumber ? `, bed ${state.repeatCallUpdate.bedNumber}` : ""}. The reason the caller contacted the phoneline again was: ${valueOr(state.repeatCallUpdate.additionalInformation)}. ${triageSummary}`;
+    state.generatedSummary = `This is a repeat Martha's Rule call received on ${valueOr(state.callDetails.dateOfReferral)} at ${valueOr(state.callDetails.timePhoneAnswered)} by a caller recorded as ${valueOr(callerTypeFormLabel(), "not selected")}. The patient details recorded were MRN ${valueOr(state.patient.mrn)}, date of birth ${valueOr(state.patient.dob)}, gender ${valueOr(state.patient.gender)}. The patient was located on ${valueOr(locationWardAreaDisplayValue())}${state.location.bedNumber ? `, bed ${state.location.bedNumber}` : ""}. The caller's concern summary was: ${valueOr(state.concernSummary.concernsSummary)}. The primary concern recorded was ${valueOr(repeatPrimaryConcernFormValue(), "not entered")}. Secondary concern recorded: ${valueOr(repeatSecondaryConcernFormValue(), "not entered")}. Ward contact status was ${wardContactLabel(state.triage.wardContact)}.`;
     state.generatedSummaryHtml = buildStructuredSummaryHtml();
     return;
   }
@@ -3146,7 +3134,6 @@ Call category: ${categoryText}
     return;
   }
 
-  const urgency = activeFormUrgency();
   const category = activeFormCategory();
   const exportedWardArea = activeTab === "visitLog" ? visitLogWardAreaDisplayValue() : locationWardAreaDisplayValue();
   const exportedBedNumber = activeTab === "visitLog" ? state.visitLog.location.bedNumber : state.location.bedNumber;
@@ -3171,8 +3158,6 @@ Call category: ${categoryText}
 
   const warningDetails = shouldShowWarningSignDetails(category) ? ` Red flags recorded: ${listLabels(redFlagOptions, category.redFlags)}${category.otherRedFlagText ? `; other warning sign: ${category.otherRedFlagText}` : ""}.` : "";
   state.generatedSummary = `A Martha's Rule call was answered on ${valueOr(state.callDetails.dateOfReferral)} at ${valueOr(state.callDetails.timePhoneAnswered)} by a caller recorded as ${callerType}. Repeat-call status was ${valueOr(state.callDetails.repeatCall, "not selected")}. The patient details recorded were ${patientDetails}. The patient was located at ${locationDetails}.
-
-Triage note: ${triageOutcomeMessage(urgency)} ${triageNextStepMessage(urgency)}
 
 The core concern was ${concern}.${warningDetails} Secondary concerns recorded: ${secondaryConcerns}. Ward contact status was ${wardContactLabel(category.wardContact)}.
 
@@ -3213,18 +3198,22 @@ function buildStructuredSummaryHtml() {
           summaryRowHtml("Date of call", formatDateForEmail(state.callDetails.dateOfReferral)),
           summaryRowHtml("Time phone answered", state.callDetails.timePhoneAnswered),
           summaryRowHtml("Delay in answering", delayAnsweringLabel()),
+          summaryRowHtml("Repeat call", "Yes"),
           summaryRowHtml("Who made the call?", callerTypeFormLabel()),
         ])}
         ${summarySectionHtml("Patient and Location", [
-          summaryRowHtml("MRN number", state.repeatCallUpdate.mrn),
-        summaryRowHtml("Ward / Area", repeatWardAreaDisplayValue()),
-          summaryRowHtml("Bed number", state.repeatCallUpdate.bedNumber),
+          summaryRowHtml("MRN number", state.patient.mrn),
+          summaryRowHtml("Date of birth", formatDateForEmail(state.patient.dob)),
+          summaryRowHtml("Gender", state.patient.gender),
+          summaryRowHtml("Ward / Area", locationWardAreaDisplayValue()),
+          summaryRowHtml("Bed number", state.location.bedNumber),
+          summaryRowHtml("Specialty / Medical team", state.location.specialtyMedicalTeam),
         ])}
         ${summarySectionHtml("Repeat Call Details", [
-          summaryRowHtml("Why has the caller contacted the phoneline again?", state.repeatCallUpdate.additionalInformation),
-          summaryRowHtml("Triage method", "Triage guidance"),
-          summaryRowHtml("PERRT review indicated", triageReviewRequiredLabel(currentRouteUrgency())),
-          summaryRowHtml("Next step", triageNextStepMessage(currentRouteUrgency())),
+          summaryRowHtml("Caller concern summary", state.concernSummary.concernsSummary),
+          summaryRowHtml("Primary concern", repeatPrimaryConcernFormValue()),
+          summaryRowHtml("Secondary concern", repeatSecondaryConcernFormValue()),
+          summaryRowHtml("Has the caller spoken to the ward?", wardContactLabel(state.triage.wardContact)),
         ])}
       </div>`;
   }
@@ -3250,7 +3239,7 @@ function buildStructuredSummaryHtml() {
 
   return `
     <div style="font-family:Arial, Helvetica, sans-serif; color:#111827; line-height:1.35;">
-      <h2 style="margin:0 0 8px; color:#003F3D; font-size:18px;">Martha's Rule Call Triage Summary</h2>
+      <h2 style="margin:0 0 8px; color:#003F3D; font-size:18px;">Martha's Rule Call Summary</h2>
       ${summarySectionHtml("Call Details", [
         summaryRowHtml("Date of call", formatDateForEmail(state.callDetails.dateOfReferral)),
         summaryRowHtml("Time phone answered", state.callDetails.timePhoneAnswered),
@@ -3274,11 +3263,6 @@ function buildStructuredSummaryHtml() {
         ...(includeWarningDetails && category.otherRedFlagText ? [summaryRowHtml("Other warning sign", category.otherRedFlagText)] : []),
         summaryRowHtml("Why did the caller use the phoneline?", secondaryConcernFormValueForCategory(category)),
         summaryRowHtml("Has the caller spoken to the ward?", wardContactLabel(category.wardContact)),
-      ])}
-      ${summarySectionHtml("Triage Note", [
-        summaryRowHtml("PERRT review indicated", triageReviewRequiredLabel(urgency)),
-        summaryRowHtml("Triage message", triageOutcomeMessage(urgency)),
-        summaryRowHtml("Next step", triageNextStepMessage(urgency)),
       ])}
       ${hasVisitLog ? summarySectionHtml("Patient Review Log", [
         summaryRowHtml("Learning Disability or Neurodiversity", state.patient.learningDisabilityNeurodiversity),
@@ -3386,7 +3370,7 @@ function urgencyEmailColours(urgency) {
 
 function generateCaseCode() {
   const date = (state.callDetails.dateOfReferral || "").replace(/-/g, "");
-  const mrn = isRepeatOnlyMode() ? state.repeatCallUpdate.mrn : state.patient.mrn;
+  const mrn = state.patient.mrn;
   return [date, mrn].filter(Boolean).join("-");
 }
 
@@ -3407,7 +3391,7 @@ function buildRepeatCallEmailHtml() {
                       <tr>
                         <td style="padding:22px 20px; text-align:center; vertical-align:middle;">
                           <div style="font-size:22px; line-height:28px; font-weight:700; color:#ffffff;">Martha's Rule Repeat Call Triage Notification</div>
-                          <div style="font-size:15px; line-height:21px; font-weight:700; color:#eef3e4; margin-top:8px;">${emailCell(repeatWardAreaDisplayValue(), "Ward / area not entered")}</div>
+                          <div style="font-size:15px; line-height:21px; font-weight:700; color:#eef3e4; margin-top:8px;">${emailCell(locationWardAreaDisplayValue(), "Ward / area not entered")}</div>
                         </td>
                         <td style="width:120px; padding:16px 18px 16px 0; text-align:right; vertical-align:top;">
                           <div style="display:inline-block; width:86px; height:86px; border-radius:50%; background:#ffffff; color:#4F5F2F; border:4px solid #eef3e4; text-align:center; font-weight:700;">
@@ -3437,12 +3421,14 @@ function buildRepeatCallEmailHtml() {
 ${emailSegment("Repeat Call Alert", [
   emailRow("Date of repeat call", formatDateForEmail(state.callDetails.dateOfReferral)),
   emailRow("Time phone answered", state.callDetails.timePhoneAnswered, true),
-  emailRow("MRN number", state.repeatCallUpdate.mrn, false, { strong: true }),
+  emailRow("MRN number", state.patient.mrn, false, { strong: true }),
+  emailRow("Date of birth", formatDateForEmail(state.patient.dob), true),
 ]).replace(/#007A78/g, "#4F5F2F").replace(/#d9e7e7/g, "#d8dfca").replace(/#C9DEDC/g, "#c7d2b4")}
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
 ${emailSegment("Patient & Location Details", [
-  emailRow("Ward / Area", repeatWardAreaDisplayValue(), true, { strong: true }),
-  emailRow("Bed number", state.repeatCallUpdate.bedNumber),
+  emailRow("Ward / Area", locationWardAreaDisplayValue(), true, { strong: true }),
+  emailRow("Bed number", state.location.bedNumber),
+  emailRow("Specialty / Medical team", state.location.specialtyMedicalTeam, true),
 ])}
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
 ${emailSegment("Current Concern Details", [
@@ -3452,7 +3438,7 @@ ${emailSegment("Current Concern Details", [
 ])}
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
 ${emailSegment("Current Repeat Call Update", [
-  emailRow("Why has the caller contacted the phoneline again?", state.repeatCallUpdate.additionalInformation, false, { vertical: true, wrap: true }),
+  emailRow("Caller concern summary", state.concernSummary.concernsSummary, false, { vertical: true, wrap: true }),
 ]).replace(/#007A78/g, "#4F5F2F").replace(/#d9e7e7/g, "#d8dfca").replace(/#C9DEDC/g, "#c7d2b4")}
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
                   <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0; width:100%; border:2px solid #4F5F2F; border-radius:14px;">
@@ -3602,14 +3588,14 @@ function generateHtmlEmail() {
   const urgency = calculateUrgency();
   const category = state.triage;
   const isRepeat = isRepeatOnlyMode();
-  const ward = isRepeat ? repeatWardAreaDisplayValue() : locationWardAreaDisplayValue();
-  const bed = isRepeat ? state.repeatCallUpdate.bedNumber : state.location.bedNumber;
-  const mrn = isRepeat ? state.repeatCallUpdate.mrn : state.patient.mrn;
-  const dob = isRepeat ? "" : formatDateForEmail(state.patient.dob);
-  const mainReason = isRepeat ? state.repeatCallUpdate.additionalInformation : primaryConcernFormValueForCategory(category);
-  const additionalInformation = isRepeat ? state.repeatCallUpdate.additionalInformation : state.concernSummary.concernsSummary;
-  const secondaryConcern = isRepeat ? "" : secondaryConcernFormValueForCategory(category);
-  const wardContact = isRepeat ? "" : wardContactLabel(category.wardContact);
+  const ward = locationWardAreaDisplayValue();
+  const bed = state.location.bedNumber;
+  const mrn = state.patient.mrn;
+  const dob = formatDateForEmail(state.patient.dob);
+  const mainReason = isRepeat ? state.concernSummary.concernsSummary : primaryConcernFormValueForCategory(category);
+  const additionalInformation = state.concernSummary.concernsSummary;
+  const secondaryConcern = isRepeat ? repeatSecondaryConcernFormValue() : secondaryConcernFormValueForCategory(category);
+  const wardContact = wardContactLabel(category.wardContact);
   const formLink = buildMicrosoftFormUrl();
 
   state.generatedEmailHtml = `<div style="margin:0; padding:0; background:#ffffff;">
@@ -3729,12 +3715,17 @@ function buildCsvRows() {
       ["Call details", "Delay in answering", state.callDetails.delayInAnswering],
       ["Call details", "Repeat call", "yes"],
       ["Caller", "Who made the call", callerTypeFormLabel()],
-      ["Repeat call update", "MRN", state.repeatCallUpdate.mrn],
-      ["Repeat call update", "Ward / Area", repeatWardAreaDisplayValue()],
-      ["Repeat call update", "Bed number", state.repeatCallUpdate.bedNumber],
-      ["Repeat call update", "Reason for repeat contact", state.repeatCallUpdate.additionalInformation],
-      ["Repeat call update", "Triage method", "guided"],
-      ["Repeat call update", "Triage code", repeatCallTriageFormValue()],
+      ["Patient", "MRN", state.patient.mrn],
+      ["Patient", "Date of birth", state.patient.dob],
+      ["Patient", "Gender", state.patient.gender],
+      ["Location", "Ward / Area", locationWardAreaDisplayValue()],
+      ["Location", "Bed number", state.location.bedNumber],
+      ["Location", "Specialty / Medical team", state.location.specialtyMedicalTeam],
+      ["Concern summary", "Caller concern summary", state.concernSummary.concernsSummary],
+      ["Triage", "Primary concern", repeatPrimaryConcernFormValue()],
+      ["Triage", "Secondary concern", repeatSecondaryConcernFormValue()],
+      ["Triage", "Ward contact", wardContactLabel(state.triage.wardContact)],
+      ["Triage", "Triage code", repeatCallTriageFormValue()],
     ];
   }
 
