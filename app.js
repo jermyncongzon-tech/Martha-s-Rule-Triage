@@ -4,7 +4,7 @@ const MAIN_PERRT_EMAIL = "uclh.perrtuch2@nhs.net";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const REPEAT_CALL_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURFg5WVk5V1BCUU1NQlM5Tk4zWEtMNThTWC4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260630-0014";
+const APP_VERSION = "20260701-0015";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -197,6 +197,8 @@ let otherWardEmailModalOpen = false;
 let otherWardEmailOpenFormAfterSave = false;
 let noticeRecipientModalOpen = false;
 let mrnAddLaterWarningOpen = false;
+let visitLogReviewConfirmOpen = false;
+let visitLogReviewConfirmChecked = false;
 let pendingNoticeRecipientScrollTop = null;
 let noticeRecipientBranchState = { uch: false, nhnn: false };
 let handoverWindowPosition = { x: null, y: null };
@@ -726,6 +728,7 @@ function renderApp() {
       ${renderNoticeRecipientModal()}
       ${renderMrnAddLaterWarningModal()}
       ${renderEpicCopyConfirmModal()}
+      ${renderVisitLogReviewConfirmModal()}
       ${renderVisitLogHandoverBanner()}
     </div>
   `;
@@ -1233,6 +1236,47 @@ function renderMrnAddLaterWarningModal() {
         <div class="email-preview-actions">
           <button class="btn secondary" type="button" data-action="close-mrn-add-later-warning">Back</button>
           <button class="btn primary" type="button" data-action="continue-mrn-add-later-warning">Continue anyway</button>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
+function renderVisitLogReviewConfirmModal() {
+  if (!visitLogReviewConfirmOpen || activeTab !== "visitLog") return "";
+
+  const reviewWardArea = visitLogWardAreaDisplayValue() || "Not provided";
+  const reviewBedNumber = state.visitLog.location.bedNumber || "Not provided";
+  const triageCategory = state.visitLog.handover?.triageCategory || "Not provided";
+
+  return `
+    <div class="modal-backdrop visit-log-review-backdrop" data-modal-lock="visit-log-review-confirm">
+      <section class="epic-copy-modal visit-log-review-modal" role="dialog" aria-modal="true" aria-labelledby="visit-log-review-title" aria-describedby="visit-log-review-description">
+        <div class="modal-header visit-log-review-header">
+          <div>
+            <h2 id="visit-log-review-title">Confirm patient before documenting</h2>
+            <p id="visit-log-review-description">Please pause and verify these prefilled details before you continue with the patient review log.</p>
+          </div>
+        </div>
+        <div class="epic-copy-modal-body visit-log-review-body">
+          <div class="visit-log-review-alert">
+            You opened this patient review log from an email notice. Make sure this is the patient you intend to review before entering any documentation.
+          </div>
+          <div class="visit-log-review-grid">
+            ${summaryRow("Case code", state.visitLog.clinicalAssessment.caseCode || "Not provided")}
+            ${summaryRow("MRN", state.patient.mrn || "Not provided")}
+            ${summaryRow("Ward / area", reviewWardArea)}
+            ${summaryRow("Bed number", reviewBedNumber)}
+            ${summaryRow("Triage category", triageCategory)}
+          </div>
+          <label class="visit-log-review-check" data-action="toggle-visit-log-review-check">
+            <input type="checkbox" ${visitLogReviewConfirmChecked ? "checked" : ""} data-action="toggle-visit-log-review-check" />
+            <span>I have checked the case code, MRN, ward and bed number, and this is the correct patient to review.</span>
+          </label>
+        </div>
+        <div class="email-preview-actions">
+          <button class="btn secondary" type="button" data-action="cancel-visit-log-review">Go back</button>
+          <button class="btn primary" type="button" data-action="confirm-visit-log-review" ${visitLogReviewConfirmChecked ? "" : "disabled"}>Continue to patient review log</button>
         </div>
       </section>
     </div>
@@ -3986,6 +4030,8 @@ function applyUrlPrefill() {
   activeTab = "visitLog";
   appModeSelected = true;
   state.currentVisitStep = 0;
+  visitLogReviewConfirmChecked = false;
+  visitLogReviewConfirmOpen = true;
 }
 
 function normalizeNavigationMode() {
@@ -4007,7 +4053,15 @@ function resetState() {
   wardContactModalOpen = false;
   otherWardEmailModalOpen = false;
   otherWardEmailOpenFormAfterSave = false;
+  visitLogReviewConfirmOpen = false;
+  visitLogReviewConfirmChecked = false;
   localStorage.removeItem(STORAGE_KEY);
+}
+
+function returnToSafeStartPage() {
+  visitLogReviewConfirmOpen = false;
+  visitLogReviewConfirmChecked = false;
+  window.location.href = `${window.location.origin}${window.location.pathname}`;
 }
 
 function normalizeWardContactDirectory(directory) {
@@ -4211,6 +4265,7 @@ window.addEventListener("pointercancel", endHandoverWindowDrag);
 
 app.addEventListener("click", (event) => {
   if (event.target.classList.contains("modal-backdrop")) {
+    if (event.target.dataset.modalLock === "visit-log-review-confirm") return;
     urgencyGuideOpen = false;
     selectedUrgencyGuide = "";
     selectedConcernHelp = "";
@@ -4221,6 +4276,8 @@ app.addEventListener("click", (event) => {
     noticeRecipientModalOpen = false;
     mrnAddLaterWarningOpen = false;
     epicCopyConfirmOpen = false;
+    visitLogReviewConfirmOpen = false;
+    visitLogReviewConfirmChecked = false;
     renderApp();
     return;
   }
@@ -4311,6 +4368,20 @@ app.addEventListener("click", (event) => {
     mrnAddLaterWarningOpen = false;
     openPrefilledMicrosoftFormWithoutPrompt();
     return;
+  }
+  if (action === "toggle-visit-log-review-check") {
+    visitLogReviewConfirmChecked = !visitLogReviewConfirmChecked;
+  }
+  if (action === "cancel-visit-log-review") {
+    returnToSafeStartPage();
+    return;
+  }
+  if (action === "confirm-visit-log-review") {
+    if (!visitLogReviewConfirmChecked) {
+      renderApp();
+      return;
+    }
+    visitLogReviewConfirmOpen = false;
   }
   if (action === "toggle-notice-recipient") {
     const noticeBody = document.querySelector(".notice-recipient-body");
@@ -4494,6 +4565,11 @@ app.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && epicCopyConfirmOpen) {
     epicCopyConfirmOpen = false;
     renderApp();
+    return;
+  }
+
+  if (event.key === "Escape" && visitLogReviewConfirmOpen) {
+    returnToSafeStartPage();
     return;
   }
 

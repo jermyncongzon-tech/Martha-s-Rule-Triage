@@ -2535,6 +2535,64 @@ textarea:focus {
   letter-spacing: 0.02em;
 }
 
+.visit-log-review-modal {
+  max-width: 760px;
+}
+
+.visit-log-review-header {
+  background: linear-gradient(90deg, #9a3412, #ea580c);
+}
+
+.visit-log-review-body {
+  gap: 16px;
+}
+
+.visit-log-review-alert {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  border-radius: 12px;
+  color: #9a3412;
+  font-weight: 700;
+  line-height: 1.5;
+  padding: 14px 16px;
+}
+
+.visit-log-review-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.visit-log-review-grid .summary-row {
+  background: #f8fafc;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  min-height: 86px;
+  padding: 14px 16px;
+}
+
+.visit-log-review-check {
+  align-items: flex-start;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  color: #0f172a;
+  cursor: pointer;
+  display: flex;
+  gap: 12px;
+  line-height: 1.5;
+  padding: 14px 16px;
+}
+
+.visit-log-review-check input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.visit-log-review-check span {
+  font-weight: 700;
+}
+
 .modal-backdrop {
   align-items: center;
   background: rgba(15, 23, 42, 0.52);
