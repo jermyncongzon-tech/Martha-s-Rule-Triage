@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260701-0022";
+const APP_VERSION = "20260701-0023";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -934,7 +934,7 @@ function renderVisitLogCallCategorySection() {
     <section class="visit-log-section">
       <h3>Call category</h3>
       <div class="section-intro">
-        This lets you confirm whether the earlier call category was right or wrong after you have seen and reviewed the patient. If needed, you can change the earlier category here for record purposes.
+        This lets you re-categorise the call after you have seen and reviewed the patient. If needed, you can change the earlier category here for record purposes.
       </div>
       <div class="field-grid">
         ${radioGroup("Do you need to re-categorise this call?", "visitLog.recategoriseCall", [["yes", "Yes"], ["no", "No"]])}
@@ -1148,6 +1148,7 @@ function repeatCallUpdateIsComplete() {
 }
 
 function renderGeneratedOutputs() {
+  if (activeTab === "visitLog") return "";
   const summaryMrn = state.patient.mrn;
   return `
     ${state.generatedSummaryHtml ? `
@@ -3152,7 +3153,14 @@ function summaryCell(value, fallback = "Not entered") {
   return escapeHtml(value || fallback);
 }
 
+function hasSummaryValue(value) {
+  if (value === 0) return true;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  return normalized !== "" && normalized !== "not entered" && normalized !== "not selected";
+}
+
 function summaryRowHtml(label, value) {
+  if (!hasSummaryValue(value)) return "";
   return `
       <tr>
         <td style="width:34%; padding:8px 10px; border:1px solid #cbd5e1; font-weight:700; background:#f8fafc; vertical-align:top;">${summaryCell(label, "")}</td>
@@ -3161,10 +3169,12 @@ function summaryRowHtml(label, value) {
 }
 
 function summarySectionHtml(title, rows) {
+  const visibleRows = rows.filter(Boolean);
+  if (!visibleRows.length) return "";
   return `
     <h3 style="margin:14px 0 6px; color:#005E5C; font-size:15px;">${summaryCell(title, "")}</h3>
     <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse; width:100%; font-size:13px; margin:0 0 10px;">
-      <tbody>${rows.join("")}
+      <tbody>${visibleRows.join("")}
       </tbody>
     </table>`;
 }
