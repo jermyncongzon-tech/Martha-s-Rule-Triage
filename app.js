@@ -4371,9 +4371,6 @@ app.addEventListener("click", (event) => {
     openPrefilledMicrosoftFormWithoutPrompt();
     return;
   }
-  if (action === "toggle-visit-log-review-check") {
-    visitLogReviewConfirmChecked = !visitLogReviewConfirmChecked;
-  }
   if (action === "cancel-visit-log-review" || action === "reject-visit-log-review") {
     returnToSafeStartPage();
     return;
@@ -4383,10 +4380,6 @@ app.addEventListener("click", (event) => {
     return;
   }
   if (action === "confirm-visit-log-review") {
-    if (!visitLogReviewConfirmChecked) {
-      renderApp();
-      return;
-    }
     visitLogReviewConfirmOpen = false;
   }
   if (action === "toggle-notice-recipient") {
