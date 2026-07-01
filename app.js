@@ -1245,37 +1245,35 @@ function renderMrnAddLaterWarningModal() {
 function renderVisitLogReviewConfirmModal() {
   if (!visitLogReviewConfirmOpen || activeTab !== "visitLog") return "";
 
-  const reviewWardArea = visitLogWardAreaDisplayValue() || "Not provided";
   const reviewBedNumber = state.visitLog.location.bedNumber || "Not provided";
-  const triageCategory = state.visitLog.handover?.triageCategory || "Not provided";
+  const callerConcernSummary = state.visitLog.handover?.callerConcernSummary?.trim() || "Not provided";
 
   return `
     <div class="modal-backdrop visit-log-review-backdrop" data-modal-lock="visit-log-review-confirm">
       <section class="epic-copy-modal visit-log-review-modal" role="dialog" aria-modal="true" aria-labelledby="visit-log-review-title" aria-describedby="visit-log-review-description">
         <div class="modal-header visit-log-review-header">
           <div>
-            <h2 id="visit-log-review-title">Confirm patient before documenting</h2>
-            <p id="visit-log-review-description">Please pause and verify these prefilled details before you continue with the patient review log.</p>
+            <h2 id="visit-log-review-title">Confirm patient before continuing</h2>
+            <p id="visit-log-review-description">Please pause and verify this pre-filled detail before you continue with your patient review.</p>
           </div>
         </div>
         <div class="epic-copy-modal-body visit-log-review-body">
-          <div class="visit-log-review-alert">
-            You opened this patient review log from an email notice. Make sure this is the patient you intend to review before entering any documentation.
+          <div class="visit-log-review-mrn-card">
+            <span>MRN</span>
+            <strong>${escapeHtml(state.patient.mrn || "Not provided")}</strong>
           </div>
           <div class="visit-log-review-grid">
-            ${summaryRow("Case code", state.visitLog.clinicalAssessment.caseCode || "Not provided")}
-            ${summaryRow("MRN", state.patient.mrn || "Not provided")}
-            ${summaryRow("Ward / area", reviewWardArea)}
             ${summaryRow("Bed number", reviewBedNumber)}
-            ${summaryRow("Triage category", triageCategory)}
+            ${summaryRow("Caller concern summary", callerConcernSummary)}
           </div>
           <label class="visit-log-review-check" data-action="toggle-visit-log-review-check">
             <input type="checkbox" ${visitLogReviewConfirmChecked ? "checked" : ""} data-action="toggle-visit-log-review-check" />
-            <span>I have checked the case code, MRN, ward and bed number, and this is the correct patient to review.</span>
+            <span>I have checked the patient details and this is the correct patient to review.</span>
           </label>
         </div>
         <div class="email-preview-actions">
-          <button class="btn secondary" type="button" data-action="cancel-visit-log-review">Go back</button>
+          <button class="btn secondary" type="button" data-action="reject-visit-log-review">This is not the patient</button>
+          <button class="btn secondary" type="button" data-action="close-visit-log-review-app">Close app</button>
           <button class="btn primary" type="button" data-action="confirm-visit-log-review" ${visitLogReviewConfirmChecked ? "" : "disabled"}>Continue to patient review log</button>
         </div>
       </section>
@@ -4064,6 +4062,14 @@ function returnToSafeStartPage() {
   window.location.href = `${window.location.origin}${window.location.pathname}`;
 }
 
+function closeVisitLogReviewApp() {
+  visitLogReviewConfirmOpen = false;
+  visitLogReviewConfirmChecked = false;
+  window.open("", "_self");
+  window.close();
+  window.location.replace("about:blank");
+}
+
 function normalizeWardContactDirectory(directory) {
   const normalized = Object.fromEntries(wardAreaSuggestions.map((wardArea) => [wardArea, []]));
   Object.entries(directory || {}).forEach(([wardArea, contacts]) => {
@@ -4372,8 +4378,12 @@ app.addEventListener("click", (event) => {
   if (action === "toggle-visit-log-review-check") {
     visitLogReviewConfirmChecked = !visitLogReviewConfirmChecked;
   }
-  if (action === "cancel-visit-log-review") {
+  if (action === "cancel-visit-log-review" || action === "reject-visit-log-review") {
     returnToSafeStartPage();
+    return;
+  }
+  if (action === "close-visit-log-review-app") {
+    closeVisitLogReviewApp();
     return;
   }
   if (action === "confirm-visit-log-review") {
