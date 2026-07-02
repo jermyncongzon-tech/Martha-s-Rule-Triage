@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260701-0023";
+const APP_VERSION = "20260701-0024";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -901,6 +901,7 @@ function isVisitLogStepComplete(stepId) {
   if (stepId === "clinicalAssessment") {
     return Boolean(
       state.patient.mrn &&
+      state.patient.ethnicGroup &&
       visit.dateOfVisit &&
       visit.clinicalAssessment.news2AtCall &&
       visit.clinicalAssessment.news2AtAttendance
@@ -945,22 +946,52 @@ function renderVisitLogCallCategorySection() {
 }
 
 function renderVisitLogClinicalAssessmentSection() {
+  const sectionComplete = isVisitLogStepComplete("clinicalAssessment");
   return `
     <section class="visit-log-section">
-      <h3>Attendance and Clinical Assessment</h3>
-      <div class="field-grid">
-        ${field("6-digit code", "visitLog.clinicalAssessment.caseCode", "text", "ABC123", "text", 6)}
-        ${field("MRN number", "patient.mrn")}
-        ${selectField("Ethnic group", "patient.ethnicGroup", ethnicGroupOptions, "Select ethnic group")}
-        ${radioGroup("Learning Disability or Neurodiversity", "patient.learningDisabilityNeurodiversity", [["yes", "Yes"], ["no", "No"], ["not_known", "Not known"]])}
-        ${selectField("Ward / Area", "visitLog.location.wardArea", wardAreaOptions, "Select ward / area")}
-        ${state.visitLog.location.wardArea === "Other" ? field("Other ward / area", "visitLog.location.wardAreaOther", "text", "Enter ward / area") : ""}
-        ${field("Bed number", "visitLog.location.bedNumber")}
-        ${field("Date of visit", "visitLog.dateOfVisit", "date")}
-        ${field("Time of PERRT/Outreach attendance", "visitLog.timeOfAttendance", "time", "Optional")}
-        ${field("NEWS2 score at time of call", "visitLog.clinicalAssessment.news2AtCall", "number")}
-        ${field("NEWS2 score at time of attendance", "visitLog.clinicalAssessment.news2AtAttendance", "number")}
-        ${textarea("Additional clinical notes", "visitLog.clinicalAssessment.additionalClinicalNotes", "", "large")}
+      <div class="visit-log-section-header">
+        <div>
+          <h3>Attendance and Clinical Assessment</h3>
+          <p class="visit-log-section-subtitle">Complete the patient identifiers first, then add the review details and notes.</p>
+        </div>
+        ${renderSectionCompletionBadge(sectionComplete)}
+      </div>
+      <div class="visit-log-section-cards">
+        <section class="visit-log-info-card">
+          <h4>Patient identifiers</h4>
+          <div class="visit-log-card-grid">
+            ${field("6-digit code", "visitLog.clinicalAssessment.caseCode", "text", "ABC123", "text", 6)}
+            ${field("MRN number", "patient.mrn")}
+            <label class="field">
+              <span>Ethnic group <strong aria-hidden="true">*</strong></span>
+              <select data-bind="patient.ethnicGroup" required aria-required="true">
+                <option value="">Select ethnic group</option>
+                ${ethnicGroupOptions.map(([optionValue, optionLabel]) => `
+                  <option value="${escapeHtml(optionValue)}" ${getPath("patient.ethnicGroup") === optionValue ? "selected" : ""}>${escapeHtml(optionLabel)}</option>
+                `).join("")}
+              </select>
+            </label>
+            ${radioGroup("Learning Disability or Neurodiversity", "patient.learningDisabilityNeurodiversity", [["yes", "Yes"], ["no", "No"], ["not_known", "Not known"]])}
+          </div>
+        </section>
+        <section class="visit-log-info-card">
+          <h4>Location and timing</h4>
+          <div class="visit-log-card-grid">
+            ${selectField("Ward / Area", "visitLog.location.wardArea", wardAreaOptions, "Select ward / area")}
+            ${state.visitLog.location.wardArea === "Other" ? field("Other ward / area", "visitLog.location.wardAreaOther", "text", "Enter ward / area") : ""}
+            ${field("Bed number", "visitLog.location.bedNumber")}
+            ${field("Date of visit", "visitLog.dateOfVisit", "date")}
+            ${field("Time of PERRT/Outreach attendance", "visitLog.timeOfAttendance", "time", "Optional")}
+          </div>
+        </section>
+        <section class="visit-log-info-card visit-log-notes-card">
+          <h4>Assessment and notes</h4>
+          <div class="visit-log-card-grid">
+            ${field("NEWS2 score at time of call", "visitLog.clinicalAssessment.news2AtCall", "number")}
+            ${field("NEWS2 score at time of attendance", "visitLog.clinicalAssessment.news2AtAttendance", "number")}
+            ${textarea("Additional clinical notes", "visitLog.clinicalAssessment.additionalClinicalNotes", "", "large")}
+          </div>
+        </section>
       </div>
     </section>
   `;
@@ -2218,6 +2249,14 @@ function summaryRow(label, value) {
   return `<div class="summary-row"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
 }
 
+function renderSectionCompletionBadge(complete) {
+  return `
+    <div class="visit-log-completion-badge ${complete ? "complete" : "incomplete"}" aria-hidden="true">
+      <span>✓</span>
+    </div>
+  `;
+}
+
 function field(label, path, type = "text", placeholder = "", inputmode = "", maxlength = "") {
   return `
     <label class="field">
@@ -2466,7 +2505,7 @@ function secondaryConcernFormValueForCategory(category = activeFormCategory()) {
 }
 
 function coreConcernMappedFormValueForCategory(category = activeFormCategory()) {
-  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : coreConcernFormLabel(category);
+  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : primaryConcernFormValueForCategory(category);
 }
 
 function triageActionDetail(urgency = calculateUrgency()) {
