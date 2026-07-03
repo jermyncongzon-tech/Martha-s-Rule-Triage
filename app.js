@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260703-0002";
+const APP_VERSION = "20260703-0003";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -17,7 +17,7 @@ const VISIT_LOG_PREFILL_QUERY_PARAMS = {
   callerConcernSummary: ["callerConcernSummary", "concernSummary", "summary"],
 };
 const FREE_TEXT_LIMIT = 500;
-const defaultNoticeRecipientEmails = ["jillian.hartin@nhs.net", "passang.pangri@nhs.net"];
+const defaultNoticeRecipientEmails = ["jillian.hartin@nhs.net", "passang.pangri@nhs.net", "uclh.PERRTband8@nhs.net"];
 const noticeRecipientOptions = [
   ["jermyn.congzon@nhs.net", "Jermyn Congzon", "Interface developer", "", "tech"],
   ["e.strickland@nhs.net", "Ellen Strickland", "Senior Project Manager", "", "tech"],
