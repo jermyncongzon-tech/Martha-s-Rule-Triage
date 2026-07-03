@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260702-0001";
+const APP_VERSION = "20260703-0001";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -414,8 +414,8 @@ const clinicalCoreConcerns = coreConcernOptions
 const serviceCoreConcerns = ["service_access_admin_environment"];
 
 const genderOptions = [
-  ["Male (including trans man)", "Male (including trans man)"],
-  ["Female (including trans woman)", "Female (including trans woman)"],
+  ["Male", "Male"],
+  ["Female", "Female"],
   ["Not Stated", "Not Stated"],
   ["Others (not listed)", "Others (not listed)"],
   ["Non-binary", "Non-binary"],
