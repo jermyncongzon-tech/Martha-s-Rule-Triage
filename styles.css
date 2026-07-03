@@ -1812,6 +1812,28 @@ textarea:focus {
   color: #fff;
 }
 
+.choice.genuine-worry-toggle {
+  appearance: none;
+  text-align: left;
+  width: 100%;
+}
+
+.choice.genuine-worry-toggle.selected {
+  background: var(--uclh-jade);
+  border-color: var(--uclh-jade);
+  box-shadow: 0 8px 18px rgba(0, 114, 124, 0.16);
+}
+
+.choice.genuine-worry-toggle.selected span {
+  color: #fff;
+}
+
+.choice.genuine-worry-toggle:focus-visible {
+  border-color: var(--uclh-jade);
+  box-shadow: 0 0 0 3px rgba(0, 114, 124, 0.16);
+  outline: none;
+}
+
 .choice-help {
   align-items: center;
   align-self: flex-start;

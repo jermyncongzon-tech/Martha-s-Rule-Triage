@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260703-0006";
+const APP_VERSION = "20260703-0007";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -1565,9 +1565,13 @@ function renderCallCategoryCascade() {
 
 function renderGenuineWorryQuestion(pathPrefix, secondaryFactors) {
   if ((secondaryFactors || []).length > 0) return "";
+  const path = `${pathPrefix}.genuineWorry`;
+  const selected = getPath(path) === "yes";
   return `
     <div class="secondary-follow-up">
-      ${radioGroup("None above: caller rang out of genuine worry?", `${pathPrefix}.genuineWorry`, [["yes", "None above"], ["no", "Other"]])}
+      <button class="choice genuine-worry-toggle ${selected ? "selected" : ""}" type="button" data-action="toggle-genuine-worry" data-path="${escapeHtml(path)}" aria-pressed="${selected ? "true" : "false"}">
+        <span>None above: caller rang out of genuine worry</span>
+      </button>
     </div>
   `;
 }
@@ -2765,8 +2769,7 @@ function secondaryFormValue(category = activeFormCategory()) {
   const factors = listLabels(secondaryFactorOptions, effectiveSecondaryFactors(category));
   if (factors !== "None selected") return factors;
   if (category.genuineWorry === "yes") return "Patient/family genuinely worried about the patient";
-  if (category.genuineWorry === "no") return "Other";
-  return "";
+  return "Other";
 }
 
 function effectiveSecondaryFactors(category = activeFormCategory()) {
@@ -2777,10 +2780,7 @@ function genuineWorrySummaryLabel(category = activeFormCategory()) {
   if (category.genuineWorry === "yes" && !(category.secondaryFactors || []).length) {
     return "None above - caller rang out of genuine worry";
   }
-  if (category.genuineWorry === "no" && !(category.secondaryFactors || []).length) {
-    return "Other";
-  }
-  return "";
+  return "Other";
 }
 
 function normalizeSavedTaxonomy() {
@@ -3956,6 +3956,8 @@ function loadState() {
     state.visitLog.callCategory.secondaryFactors = state.visitLog.callCategory.secondaryFactors || [];
     state.triage.genuineWorry = state.triage.genuineWorry || "";
     state.visitLog.callCategory.genuineWorry = state.visitLog.callCategory.genuineWorry || "";
+    if (!(state.triage.secondaryFactors || []).length && !state.triage.genuineWorry) state.triage.genuineWorry = "no";
+    if (!(state.visitLog.callCategory.secondaryFactors || []).length && !state.visitLog.callCategory.genuineWorry) state.visitLog.callCategory.genuineWorry = "no";
     state.triage.noticeRecipients = defaultNoticeRecipients(state.triage.noticeRecipients);
     normalizeSavedTaxonomy();
     normalizeWardAreaValues();
@@ -4119,13 +4121,13 @@ async function loadWardContactDirectory() {
 
 function resetSecondaryTriage() {
   state.triage.secondaryFactors = [];
-  state.triage.genuineWorry = "";
+  state.triage.genuineWorry = "no";
   state.triage.wardContact = "";
 }
 
 function resetSecondaryCategory(pathPrefix) {
   setPath(`${pathPrefix}.secondaryFactors`, []);
-  setPath(`${pathPrefix}.genuineWorry`, "");
+  setPath(`${pathPrefix}.genuineWorry`, "no");
   setPath(`${pathPrefix}.wardContact`, "");
 }
 
@@ -4184,7 +4186,7 @@ function applyChangeSideEffects(path, value) {
 
   if (path === "triage.secondaryFactors") {
     state.triage.wardContact = "";
-    state.triage.genuineWorry = "";
+    state.triage.genuineWorry = "no";
   }
 
   if (path === "visitLog.actionsOutcomes.learningIdentified" && value === "no") {
@@ -4220,7 +4222,7 @@ function applyChangeSideEffects(path, value) {
 
   if (path === "visitLog.callCategory.secondaryFactors") {
     state.visitLog.callCategory.wardContact = "";
-    state.visitLog.callCategory.genuineWorry = "";
+    state.visitLog.callCategory.genuineWorry = "no";
   }
 
   if (path === "triage.genuineWorry") {
@@ -4322,6 +4324,22 @@ app.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
     selectedConcernHelp = concernHelpTarget.dataset.concern || "";
+    renderApp();
+    return;
+  }
+
+  const genuineWorryToggle = event.target.closest("[data-action='toggle-genuine-worry']");
+  if (genuineWorryToggle) {
+    event.preventDefault();
+    const path = genuineWorryToggle.dataset.path || "";
+    const current = getPath(path);
+    const next = current === "yes" ? "no" : "yes";
+    setPath(path, next);
+    applyChangeSideEffects(path, next);
+    if (path.startsWith("triage.")) {
+      queueTriageQuestionCenter();
+    }
+    suppressNextRenderAnimations = true;
     renderApp();
     return;
   }
