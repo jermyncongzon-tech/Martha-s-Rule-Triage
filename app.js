@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260703-0004";
+const APP_VERSION = "20260703-0005";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -16,7 +16,8 @@ const VISIT_LOG_PREFILL_QUERY_PARAMS = {
   secondaryConcern: ["secondaryConcern", "secondary"],
   callerConcernSummary: ["callerConcernSummary", "concernSummary", "summary"],
 };
-const FREE_TEXT_LIMIT = 400;
+const FREE_TEXT_LIMIT = 500;
+const REVIEW_NOTES_LIMIT = 400;
 const defaultNoticeRecipientEmails = ["jillian.hartin@nhs.net", "passang.pangri@nhs.net", "uclh.PERRTband8@nhs.net"];
 const noticeRecipientOptions = [
   ["jermyn.congzon@nhs.net", "Jermyn Congzon", "Interface developer", "", "tech"],
@@ -994,7 +995,7 @@ function renderVisitLogClinicalAssessmentSection() {
           <div class="visit-log-card-grid">
             ${field("NEWS2 score at time of call", "visitLog.clinicalAssessment.news2AtCall", "number")}
             ${field("NEWS2 score at time of attendance", "visitLog.clinicalAssessment.news2AtAttendance", "number")}
-            ${textarea("Additional clinical notes", "visitLog.clinicalAssessment.additionalClinicalNotes", "", "large")}
+            ${textarea("Additional clinical notes", "visitLog.clinicalAssessment.additionalClinicalNotes", "", "large", REVIEW_NOTES_LIMIT)}
           </div>
         </section>
       </div>
@@ -1023,7 +1024,7 @@ function renderVisitLogLearningNotificationsSection() {
         ${radioGroup("Learning identified?", "visitLog.actionsOutcomes.learningIdentified", [["yes", "Yes"], ["no", "No"], ["pending", "Pending"]])}
         ${state.visitLog.actionsOutcomes.learningIdentified && state.visitLog.actionsOutcomes.learningIdentified !== "no" ? `
           ${selectField("Learning theme", "visitLog.actionsOutcomes.learningTheme", learningThemeOptions, "Select learning theme")}
-          ${textarea("Feedback / learning notes", "visitLog.actionsOutcomes.feedbackLearningNotes")}
+          ${textarea("Feedback / learning notes", "visitLog.actionsOutcomes.feedbackLearningNotes", "", "", REVIEW_NOTES_LIMIT)}
         ` : ""}
         <div class="field-note">
           By default, this patient review log will be sent to managers and matrons.
@@ -2271,14 +2272,14 @@ function field(label, path, type = "text", placeholder = "", inputmode = "", max
   `;
 }
 
-function textarea(label, path, placeholder = "", size = "") {
+function textarea(label, path, placeholder = "", size = "", maxlength = FREE_TEXT_LIMIT) {
   const value = getPath(path) || "";
   return `
     <label class="field ${size === "large" ? "wide" : ""}">
       <span>${escapeHtml(label)}</span>
       <span class="textarea-wrap">
-        <textarea data-bind="${path}" maxlength="${FREE_TEXT_LIMIT}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value)}</textarea>
-        <span class="char-counter">${String(value).length}/${FREE_TEXT_LIMIT}</span>
+        <textarea data-bind="${path}" maxlength="${maxlength}" placeholder="${escapeHtml(placeholder)}">${escapeHtml(value)}</textarea>
+        <span class="char-counter">${String(value).length}/${maxlength}</span>
       </span>
     </label>
   `;
