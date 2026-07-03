@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260702-0001";
+const APP_VERSION = "20260703-0002";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -1566,7 +1566,7 @@ function renderGenuineWorryQuestion(pathPrefix, secondaryFactors) {
   if ((secondaryFactors || []).length > 0) return "";
   return `
     <div class="secondary-follow-up">
-      ${radioGroup("No secondary concern is selected. Would you say the patient or family rang out of genuine worry and concern for the patient's condition?", `${pathPrefix}.genuineWorry`, [["yes", "Yes"], ["no", "No"]])}
+      ${radioGroup("None above: caller rang out of genuine worry?", `${pathPrefix}.genuineWorry`, [["yes", "None above"], ["no", "Other"]])}
     </div>
   `;
 }
@@ -2764,6 +2764,7 @@ function secondaryFormValue(category = activeFormCategory()) {
   const factors = listLabels(secondaryFactorOptions, effectiveSecondaryFactors(category));
   if (factors !== "None selected") return factors;
   if (category.genuineWorry === "yes") return "Patient/family genuinely worried about the patient";
+  if (category.genuineWorry === "no") return "Other";
   return "";
 }
 
@@ -2773,10 +2774,10 @@ function effectiveSecondaryFactors(category = activeFormCategory()) {
 
 function genuineWorrySummaryLabel(category = activeFormCategory()) {
   if (category.genuineWorry === "yes" && !(category.secondaryFactors || []).length) {
-    return "Yes - no secondary concern selected; caller rang out of genuine worry and concern";
+    return "None above - caller rang out of genuine worry";
   }
   if (category.genuineWorry === "no" && !(category.secondaryFactors || []).length) {
-    return "No";
+    return "Other";
   }
   return "";
 }
