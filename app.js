@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260709-0002";
+const APP_VERSION = "20260717-0001";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -245,7 +245,7 @@ const coreConcernGroups = {
   treatment_related: {
     label: "Treatment-related issue",
     options: {
-      medication: "Medication-related issue",
+      medication: "Non-pain medication-related issue",
       surgical_intervention: "Surgical intervention-related issue",
       nursing_intervention: "Nursing intervention-related issue",
       other_treatment: "Other treatment-related issue",
@@ -306,8 +306,8 @@ const secondaryConcernGroups = {
 const concernHelpDetails = {
   pain: {
     title: "Pain",
-    useWhen: "New, worsening, uncontrolled or persistent pain, where the main issue is the symptom itself.",
-    example: "The patient is still in pain.",
+    useWhen: "New, worsening, uncontrolled or persistent pain, where the main issue is the symptom itself, including when delayed or ineffective pain relief means the main concern is still the patient's pain.",
+    example: "The patient is still in pain despite waiting for pain relief.",
   },
   infection_sepsis: {
     title: "Infection / sepsis-related concern",
@@ -325,9 +325,9 @@ const concernHelpDetails = {
     example: "The patient is vomiting and feels unwell.",
   },
   medication: {
-    title: "Medication-related issue",
-    useWhen: "Medication delay, missed medication, incorrect prescription, medication route issue, unclear medication plan, or medication-related safety concern.",
-    example: "Pain relief has not been prescribed.",
+    title: "Non-pain medication-related issue",
+    useWhen: "Medication delay, missed medication, incorrect prescription, medication route issue, unclear medication plan, or medication-related safety concern where the main issue is not pain itself.",
+    example: "The patient's regular insulin has been missed.",
   },
   surgical_intervention: {
     title: "Surgical intervention-related issue",
@@ -526,7 +526,7 @@ const callerTypeOptions = [
 ];
 
 const formIssueOptions = [
-  ["Medication issue or delay", "Medication issue or delay"],
+  ["Non-pain medication issue or delay", "Non-pain medication issue or delay"],
   ["Delayed investigations", "Delayed investigations"],
   ["Clinical concern/management of a long term condition", "Clinical concern/management of a long term condition"],
   ["Discharge planning", "Discharge planning"],
@@ -2956,7 +2956,7 @@ function coreConcernFormLabel(category = activeFormCategory()) {
   ].includes(factor));
   const hasDelayIssue = secondaryFactors.includes("delay_in_response_or_action");
 
-  if (core === "medication") return "Medication issue or delay";
+  if (core === "medication") return "Non-pain medication issue or delay";
   if (core === "other_treatment" && hasDelayIssue) return "Delayed investigations";
   if (hasCommunicationIssue) return "Communication issue";
   if (core === "other_unclear") return "signpost to another clinical service or team";
@@ -2979,7 +2979,7 @@ function nhseNonAcuteCategoryFormValue(category = activeFormCategory()) {
     "raised_but_unresolved",
   ];
 
-  if (core === "medication") return "Medication issue or delay";
+  if (core === "medication") return "Non-pain medication issue or delay";
   if (core === "discharge_aftercare") return "Discharge planning";
   if (serviceCoreConcerns.includes(core)) return "Non-clinical concern";
   if (core === "other_unclear") return "signpost to another clinical service or team";
