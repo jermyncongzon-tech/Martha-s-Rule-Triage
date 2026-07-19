@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260717-0002";
+const APP_VERSION = "20260719-0001";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
@@ -2507,7 +2507,9 @@ function repeatSecondaryConcernFormValue() {
 }
 
 function primaryConcernFormValueForCategory(category = activeFormCategory()) {
-  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : coreConcernLabels[category.coreConcern] || "";
+  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency"
+    ? categoryOfCallLabel(category)
+    : coreConcernLabels[category.coreConcern] || "";
 }
 
 function secondaryConcernFormValueForCategory(category = activeFormCategory()) {
@@ -2937,6 +2939,11 @@ function categoryOfCallLabel(category = activeFormCategory()) {
   return `Acute Deterioration; Warning signs=${warningSignsFormDetail(category)}`;
 }
 
+function acuteNonAcuteFormValue(category = activeFormCategory()) {
+  const isAcute = category.acuteDeterioration === "yes" || category.acuteDeterioration === "unsure" || hasSelectedWarningSigns(category);
+  return isAcute ? "Acute Deterioration" : "Non-Acute Deterioration";
+}
+
 function shouldShowWarningSignDetails(category = activeFormCategory()) {
   const urgency = calculateUrgencyFromCategory(category);
   return urgency === "U1_immediate_emergency" || urgency === "U2_same_day_clinical";
@@ -3065,12 +3072,12 @@ function buildMicrosoftFormUrl() {
     ["r5242c93b6153469a955a18eef845b123", rawValue(state.location.bedNumber)],
     ["rd5eb8fd12c3b4820a98be63071b7aa45", quotedIfPresent(state.location.specialtyMedicalTeam)],
     ["re71f380f7f854a7d89d4b259a20fa59b", quotedIfPresent(callerTypeFormLabel())],
-    ["ra65e5273f8334f57bd4353404b4d74d1", quotedIfPresent(categoryOfCallLabel(category))],
+    ["ra65e5273f8334f57bd4353404b4d74d1", quotedIfPresent(acuteNonAcuteFormValue(category))],
     ["ra149b074a6c3473a9b8013202182b297", quotedIfPresent(microsoftFormTriageCategoryLabel(activeFormUrgency()))],
     ["rcebd38d3d563434fb16f86c0316377c6", quotedIfPresent(coreConcernMappedFormValueForCategory(category))],
     ["rff487e35c7034b4199c9e5e05f1a1d9b", rawValue(nhseNonAcuteCategoryFormValue(category))],
     ["r78896ccbec904d53a48753318de935e2", rawValue(noticeRecipientFormValue())],
-    ["r39f66a7d3a6e490ca8cb00c92e987f42", rawValue(categoryOfCallLabel(category))],
+    ["r39f66a7d3a6e490ca8cb00c92e987f42", rawValue(acuteNonAcuteFormValue(category))],
     ["r07a6bc2130884fbdab35c6a9771103f6", rawValue(primaryConcernFormValueForCategory(category))],
     ["r2a55ea2436a747179be777730d105534", quotedIfPresent(sameDayReviewFormLabel(category))],
     ["r267fb377cf3f4dde8589f7163ac990ad", rawValue(secondaryConcernFormValueForCategory(category))],
