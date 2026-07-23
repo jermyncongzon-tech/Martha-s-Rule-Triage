@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0001";
+const APP_VERSION = "20260723-0003";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const MULTI_SELECT_FORM_DELIMITER = " | ";
@@ -447,6 +447,7 @@ const ethnicGroupOptions = [
 const wardAreaSuggestions = [
   "EGA 2nd Floor Neonatal Unit",
   "EGA Early Pregnancy Unit",
+  "EGA L03 ACU",
   "EGA Lower Ground Paediatric Outpatients",
   "EGA Lower Ground Urogynaecology",
   "GWB 1st Floor Grafton Way Elective Orthopaedics",
@@ -1368,10 +1369,12 @@ function renderCallerSection() {
 function renderTriageSection() {
   const triage = state.triage;
   const showRedFlags = triage.acuteDeterioration === "yes" || triage.acuteDeterioration === "unsure";
-  const hasAcuteWarningSigns = showRedFlags && triage.redFlags.some((item) => item !== "none");
   const skipSameDayReview = shouldAutoRouteToPerrt(triage);
   const redFlagsAnswered = !showRedFlags || triage.redFlags.length > 0;
-  const showCoreConcern = !hasAcuteWarningSigns && (triage.acuteDeterioration === "no" || (showRedFlags && redFlagsAnswered));
+  const showCoreConcern = triage.acuteDeterioration === "no" || (showRedFlags && redFlagsAnswered);
+  const autoRouteNotice = hasSelectedWarningSigns(triage)
+    ? "Acute warning signs have been selected. This call will be routed as U1 for immediate PERRT/Outreach review, so the separate PERRT review question is not needed."
+    : "Acute deterioration has been selected. This call will be routed at minimum as U2 for PERRT/Outreach review, so the separate PERRT review question is not needed.";
   const isClinical = clinicalCoreConcerns.includes(triage.coreConcern);
   const coreAnswered = Boolean(triage.coreConcern);
   const sameDayAnswered = skipSameDayReview || !isClinical || triage.sameDayReview === "yes" || triage.sameDayReview === "no" || triage.sameDayReview === "unsure";
@@ -1400,7 +1403,7 @@ function renderTriageSection() {
       ${coreAnswered && !isClinical && !skipSameDayReview ? skippedTriageQuestionCard("4", "PERRT review", "Skipped because the primary concern is service, administrative, environmental, unclear or non-clinical.") : ""}
 
       ${skipSameDayReview && coreAnswered ? `
-        <div class="notice">Acute deterioration has been selected. This call will be routed at minimum as U2 for PERRT/Outreach review, so the separate PERRT review question is not needed.</div>
+        <div class="notice">${autoRouteNotice}</div>
       ` : ""}
 
       ${showSecondary ? triageQuestionCard("5", "Secondary concern", `
@@ -1525,10 +1528,12 @@ function renderTriageStatusPanel(category) {
 function renderCallCategoryCascade() {
   const category = state.visitLog.callCategory;
   const showRedFlags = category.acuteDeterioration === "yes" || category.acuteDeterioration === "unsure";
-  const hasAcuteWarningSigns = showRedFlags && category.redFlags.some((item) => item !== "none");
   const skipSameDayReview = shouldAutoRouteToPerrt(category);
   const redFlagsAnswered = !showRedFlags || category.redFlags.length > 0;
-  const showCoreConcern = !hasAcuteWarningSigns && (category.acuteDeterioration === "no" || (showRedFlags && redFlagsAnswered));
+  const showCoreConcern = category.acuteDeterioration === "no" || (showRedFlags && redFlagsAnswered);
+  const autoRouteNotice = hasSelectedWarningSigns(category)
+    ? "Acute warning signs have been selected. This call will be routed as U1 for immediate PERRT/Outreach review, so the separate PERRT review question is not needed."
+    : "Acute deterioration has been selected. This call will be routed at minimum as U2 for PERRT/Outreach review, so the separate PERRT review question is not needed.";
   const isClinical = clinicalCoreConcerns.includes(category.coreConcern);
   const coreAnswered = Boolean(category.coreConcern);
   const sameDayAnswered = skipSameDayReview || !isClinical || category.sameDayReview === "yes" || category.sameDayReview === "no" || category.sameDayReview === "unsure";
@@ -1557,7 +1562,7 @@ function renderCallCategoryCascade() {
       ${coreAnswered && !isClinical && !skipSameDayReview ? skippedTriageQuestionCard("4", "PERRT review", "Skipped because the primary concern is service, administrative, environmental, unclear or non-clinical.") : ""}
 
       ${skipSameDayReview && coreAnswered ? `
-        <div class="notice">Acute deterioration has been selected. This call will be routed at minimum as U2 for PERRT/Outreach review, so the separate PERRT review question is not needed.</div>
+        <div class="notice">${autoRouteNotice}</div>
       ` : ""}
 
       ${showSecondary ? triageQuestionCard("5", "Secondary concern", `
@@ -2445,7 +2450,7 @@ function shouldAskRedFlags(category) {
 }
 
 function shouldAutoRouteToPerrt(category) {
-  return shouldAskRedFlags(category) && (category.redFlags || []).includes("none");
+  return shouldAskRedFlags(category) && ((category.redFlags || []).includes("none") || hasSelectedWarningSigns(category));
 }
 
 function requiresSameDayReviewQuestion(category) {
@@ -2514,9 +2519,7 @@ function repeatSecondaryConcernFormValue() {
 }
 
 function primaryConcernFormValueForCategory(category = activeFormCategory()) {
-  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency"
-    ? categoryOfCallLabel(category)
-    : coreConcernLabels[category.coreConcern] || "";
+  return coreConcernLabels[category.coreConcern] || "";
 }
 
 function secondaryConcernFormValueForCategory(category = activeFormCategory()) {
@@ -2528,7 +2531,7 @@ function secondaryConcernMicrosoftFormValueForCategory(category = activeFormCate
 }
 
 function coreConcernMappedFormValueForCategory(category = activeFormCategory()) {
-  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : primaryConcernFormValueForCategory(category);
+  return primaryConcernFormValueForCategory(category);
 }
 
 function triageActionDetail(urgency = calculateUrgency()) {
@@ -2641,8 +2644,7 @@ function triageCategoryMissingFields(category) {
   const missing = [];
   const redFlagsRequired = shouldAskRedFlags(category);
   const redFlagsAnswered = !redFlagsRequired || (category.redFlags || []).length > 0;
-  const hasAcuteWarningSigns = shouldAskRedFlags(category) && hasSelectedWarningSigns(category);
-  const shouldHaveCoreConcern = !hasAcuteWarningSigns && (category.acuteDeterioration === "no" || (shouldAskRedFlags(category) && redFlagsAnswered));
+  const shouldHaveCoreConcern = category.acuteDeterioration === "no" || (shouldAskRedFlags(category) && redFlagsAnswered);
   const hasCoreConcern = Boolean(category.coreConcern);
   const hasSecondary = (category.secondaryFactors || []).length > 0;
   const hasGenuineWorryAnswer = category.genuineWorry === "yes" || category.genuineWorry === "no";
