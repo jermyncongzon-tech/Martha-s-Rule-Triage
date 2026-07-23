@@ -2,9 +2,10 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260719-0001";
+const APP_VERSION = "20260723-0001";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
+const MULTI_SELECT_FORM_DELIMITER = " | ";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
   mrn: ["mrn", "MRN"],
   wardArea: ["visitWardArea", "wardArea", "ward"],
@@ -671,6 +672,12 @@ function listLabels(options, values) {
   const selected = values || [];
   if (!selected.length) return "None selected";
   return selected.map((value) => optionLabel(options, value)).join(", ");
+}
+
+function listLabelsForFormExport(options, values) {
+  const selected = values || [];
+  if (!selected.length) return "None selected";
+  return selected.map((value) => optionLabel(options, value)).join(MULTI_SELECT_FORM_DELIMITER);
 }
 
 function isRepeatOnlyMode() {
@@ -2516,6 +2523,10 @@ function secondaryConcernFormValueForCategory(category = activeFormCategory()) {
   return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : secondaryFormValue(category);
 }
 
+function secondaryConcernMicrosoftFormValueForCategory(category = activeFormCategory()) {
+  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : secondaryMicrosoftFormValue(category);
+}
+
 function coreConcernMappedFormValueForCategory(category = activeFormCategory()) {
   return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : primaryConcernFormValueForCategory(category);
 }
@@ -2769,6 +2780,13 @@ function acuteBucketLabel() {
 
 function secondaryFormValue(category = activeFormCategory()) {
   const factors = listLabels(secondaryFactorOptions, effectiveSecondaryFactors(category));
+  if (factors !== "None selected") return factors;
+  if (category.genuineWorry === "yes") return "Patient/family genuinely worried about the patient";
+  return "Other";
+}
+
+function secondaryMicrosoftFormValue(category = activeFormCategory()) {
+  const factors = listLabelsForFormExport(secondaryFactorOptions, effectiveSecondaryFactors(category));
   if (factors !== "None selected") return factors;
   if (category.genuineWorry === "yes") return "Patient/family genuinely worried about the patient";
   return "Other";
@@ -3040,7 +3058,7 @@ function buildVisitLogMicrosoftFormParams() {
     ["rbcfd3847dd5c423a897afeebebc96d08", rawValue(recategorised ? categoryOfCallLabel(category) : "")],
     ["rc252f81b20fd4c7eb20b15215d8b4ec8", rawValue(recategorised ? coreConcernMappedFormValueForCategory(category) : "")],
     ["r9ed4f7e2948341f18a7657f047c76244", rawValue(recategorised ? nhseNonAcuteCategoryFormValue(category) : "")],
-    ["r367218e041e04b7d8f4c0eb6deb5742d", rawValue(recategorised ? secondaryConcernFormValueForCategory(category) : "")],
+    ["r367218e041e04b7d8f4c0eb6deb5742d", rawValue(recategorised ? secondaryConcernMicrosoftFormValueForCategory(category) : "")],
     ["r7a51fb7c102c46e6914d226ac905af84", rawValue(recategorised ? wardContactLabel(category.wardContact) : "")],
     ["r26f151b8d3a943b3a074bf3cf938d3e2", rawValue(learningStatusLabel())],
     ["raadbf318f8fb47d4b3d82fd4eb37746c", rawValue(visit.actionsOutcomes.learningTheme)],
@@ -3080,7 +3098,7 @@ function buildMicrosoftFormUrl() {
     ["r39f66a7d3a6e490ca8cb00c92e987f42", rawValue(acuteNonAcuteFormValue(category))],
     ["r07a6bc2130884fbdab35c6a9771103f6", rawValue(primaryConcernFormValueForCategory(category))],
     ["r2a55ea2436a747179be777730d105534", quotedIfPresent(sameDayReviewFormLabel(category))],
-    ["r267fb377cf3f4dde8589f7163ac990ad", rawValue(secondaryConcernFormValueForCategory(category))],
+    ["r267fb377cf3f4dde8589f7163ac990ad", rawValue(secondaryConcernMicrosoftFormValueForCategory(category))],
     ["r23794c7a44244c0fb226d486388fd7d2", rawValue(wardContactLabel(category.wardContact))],
     ["rbf815cbaa1c240c3a6bb0b3da063d843", rawValue(state.concernSummary.concernsSummary)],
   ];
