@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0004";
+const APP_VERSION = "20260723-0005";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -198,6 +198,8 @@ let wardContactModalOpen = false;
 let otherWardEmailModalOpen = false;
 let otherWardEmailOpenFormAfterSave = false;
 let noticeRecipientModalOpen = false;
+let noticeLaunchConfirmOpen = false;
+let noticeOpenedForCurrentActivity = false;
 let mrnAddLaterWarningOpen = false;
 let visitLogReviewConfirmOpen = false;
 let visitLogReviewConfirmChecked = false;
@@ -732,6 +734,7 @@ function renderApp() {
       ${renderWardContactModal()}
       ${renderOtherWardEmailModal()}
       ${renderNoticeRecipientModal()}
+      ${renderNoticeLaunchConfirmModal()}
       ${renderMrnAddLaterWarningModal()}
       ${renderEpicCopyConfirmModal()}
       ${renderVisitLogReviewConfirmModal()}
@@ -1174,7 +1177,7 @@ function isStepComplete(stepId) {
   if (stepId === "callDetails") {
     return Boolean(state.callDetails.dateOfReferral && state.callDetails.timePhoneAnswered && state.callDetails.repeatCall);
   }
-  if (stepId === "patient") return Boolean(state.patient.mrn);
+  if (stepId === "patient") return Boolean(state.patient.mrn && state.patient.dob);
   if (stepId === "location") return wardAreaComplete(state.location.wardArea, state.location.wardAreaOther);
   if (stepId === "caller") return Boolean(state.caller.callerType);
   if (stepId === "triage") return triageCategoryIsComplete(state.triage);
@@ -1762,6 +1765,29 @@ function renderNoticeRecipientModal() {
   `;
 }
 
+function renderNoticeLaunchConfirmModal() {
+  if (!noticeLaunchConfirmOpen) return "";
+  return `
+    <div class="modal-backdrop">
+      <section class="epic-copy-modal" role="dialog" aria-modal="true" aria-labelledby="notice-launch-title">
+        <div class="modal-header">
+          <div>
+            <h2 id="notice-launch-title">Open Microsoft Form</h2>
+            <p>A pre-filled Microsoft Form will open in a new tab.</p>
+          </div>
+        </div>
+        <div class="epic-copy-modal-body">
+          <p>To prevent repeat notices, choose whether to keep this activity open or clear it after the form opens.</p>
+          <div class="modal-actions">
+            <button class="btn secondary" type="button" data-action="launch-notice-keep-open">Keep this window open</button>
+            <button class="btn primary" type="button" data-action="launch-notice-clear-activity">Open form and clear activity</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  `;
+}
+
 function renderPatientSection() {
   return `
     <div class="field-grid">
@@ -1772,7 +1798,10 @@ function renderPatientSection() {
         </span>
         <input type="text" data-bind="patient.mrn" value="${escapeHtml(getPath("patient.mrn") || "")}" />
       </label>
-      ${field("Date of birth", "patient.dob", "date")}
+      <label class="field">
+        <span>Date of birth <strong aria-hidden="true">*</strong></span>
+        <input type="date" data-bind="patient.dob" value="${escapeHtml(state.patient.dob || "")}" required aria-required="true" />
+      </label>
       ${selectField("Gender", "patient.gender", genderOptions, "Select gender")}
     </div>
   `;
@@ -1803,9 +1832,9 @@ function renderTriageRouteActionSection() {
       <div class="route-reminder">Please ensure the respective ward is informed before you complete the notice.</div>
       <div class="route-actions">
         <div class="route-action-stack">
-          <button class="btn secondary notify-form-button ${isReadyForPrefilledForm() ? "ready-form" : ""}" type="button" data-action="open-ms-form" ${isReadyForPrefilledForm() ? "" : "disabled"}>
-            <span>Send Notice to Teams</span>
-            <small>Open pre-filled NHS MS Form</small>
+          <button class="btn secondary notify-form-button ${isReadyForPrefilledForm() && !noticeOpenedForCurrentActivity ? "ready-form" : ""}" type="button" data-action="open-ms-form" ${isReadyForPrefilledForm() && !noticeOpenedForCurrentActivity ? "" : "disabled"}>
+            <span>${noticeOpenedForCurrentActivity ? "Notice form opened" : "Send Notice to Teams"}</span>
+            <small>${noticeOpenedForCurrentActivity ? "Start a new activity to send another notice" : "Open pre-filled NHS MS Form"}</small>
           </button>
           <button class="btn secondary" type="button" data-action="preview-email">Preview automated email</button>
         </div>
@@ -2296,9 +2325,10 @@ function renderOtherWarningSignField(path, category) {
     <div class="warning-sign-detail${isMissing ? " is-missing" : ""}">
       <label class="field">
         <span>Other warning sign <strong aria-hidden="true">*</strong></span>
-        <input type="text" data-bind="${escapeHtml(path)}" value="${escapeHtml(category.otherRedFlagText || "")}" placeholder="Describe the warning sign" required aria-required="true" aria-invalid="${isMissing ? "true" : "false"}" />
+        <input type="text" data-bind="${escapeHtml(path)}" data-warning-sign-path="${escapeHtml(path)}" value="${escapeHtml(category.otherRedFlagText || "")}" placeholder="Describe the warning sign" required aria-required="true" aria-invalid="${isMissing ? "true" : "false"}" />
       </label>
       ${isMissing ? `<p class="warning-sign-required">Enter the warning sign before continuing to the primary concern.</p>` : ""}
+      <button class="btn secondary warning-sign-confirm" type="button" data-action="confirm-other-warning-sign" data-warning-sign-path="${escapeHtml(path)}">Confirm warning sign</button>
     </div>
   `;
 }
@@ -2625,6 +2655,7 @@ function calculateCompleteness() {
       { label: "Repeat-call branch answered", done: Boolean(state.callDetails.repeatCall) },
       { label: "Caller type recorded", done: Boolean(state.caller.callerType) },
       { label: "Patient MRN entered", done: Boolean(state.patient.mrn) },
+      { label: "Patient date of birth entered", done: Boolean(state.patient.dob) },
       { label: "Ward / area entered", done: wardAreaComplete(state.location.wardArea, state.location.wardAreaOther) },
       { label: "Repeat-call triage completed", done: triageCategoryIsComplete(state.triage) },
       { label: "Caller concern summary entered", done: Boolean(state.concernSummary.concernsSummary) },
@@ -2638,13 +2669,14 @@ function calculateCompleteness() {
     { label: "Triage questions completed", done: triageCategoryIsComplete(state.triage) },
     { label: "Caller concern summary entered", done: Boolean(state.concernSummary.concernsSummary) },
     { label: "Patient MRN entered", done: Boolean(state.patient.mrn) },
+    { label: "Patient date of birth entered", done: Boolean(state.patient.dob) },
     { label: "Ward / area entered", done: wardAreaComplete(state.location.wardArea, state.location.wardAreaOther) },
     { label: "Triage route generated", done: Boolean(calculateUrgency()) },
   ];
 }
 
 function isReadyForPrefilledForm() {
-  return calculateCompleteness().every((item) => item.done);
+  return Boolean(state.patient.dob) && calculateCompleteness().every((item) => item.done);
 }
 
 function currentTriageMissingFields() {
@@ -3172,7 +3204,7 @@ function openPrefilledMicrosoftForm() {
     renderApp();
     return;
   }
-  window.open(buildMicrosoftFormUrl(), "_blank", "noopener,noreferrer");
+  requestMicrosoftFormLaunch();
 }
 
 function openPrefilledMicrosoftFormWithoutPrompt() {
@@ -3193,7 +3225,24 @@ function openPrefilledMicrosoftFormWithoutPrompt() {
     renderApp();
     return;
   }
+  requestMicrosoftFormLaunch();
+}
+
+function requestMicrosoftFormLaunch() {
+  if (noticeOpenedForCurrentActivity) {
+    window.alert("This notice form has already been opened for the current activity. Start a new activity before sending another notice.");
+    return;
+  }
+  noticeLaunchConfirmOpen = true;
+  renderApp();
+}
+
+function launchMicrosoftForm(clearActivity) {
   window.open(buildMicrosoftFormUrl(), "_blank", "noopener,noreferrer");
+  noticeOpenedForCurrentActivity = true;
+  noticeLaunchConfirmOpen = false;
+  if (clearActivity) resetState();
+  renderApp();
 }
 
 function generateStructuredSummary() {
@@ -4121,6 +4170,8 @@ function applyUrlPrefill() {
   appModeSelected = true;
   state.currentVisitStep = 0;
   visitLogReviewConfirmChecked = false;
+  noticeLaunchConfirmOpen = false;
+  noticeOpenedForCurrentActivity = false;
   visitLogReviewConfirmOpen = true;
 }
 
@@ -4145,6 +4196,8 @@ function resetState() {
   otherWardEmailOpenFormAfterSave = false;
   visitLogReviewConfirmOpen = false;
   visitLogReviewConfirmChecked = false;
+  noticeLaunchConfirmOpen = false;
+  noticeOpenedForCurrentActivity = false;
   localStorage.removeItem(STORAGE_KEY);
 }
 
@@ -4314,6 +4367,20 @@ app.addEventListener("input", (event) => {
   }
 });
 
+app.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter") return;
+  const target = event.target.closest("[data-warning-sign-path]");
+  if (!target) return;
+  event.preventDefault();
+  const warningSign = (getPath(target.dataset.warningSignPath) || "").trim();
+  if (!warningSign) {
+    window.alert("Please enter the other warning sign before continuing.");
+    return;
+  }
+  setPath(target.dataset.warningSignPath, warningSign);
+  renderApp();
+});
+
 app.addEventListener("change", (event) => {
   const target = event.target.closest("[data-bind]");
   if (!target) return;
@@ -4458,6 +4525,25 @@ app.addEventListener("click", (event) => {
     noticeRecipientModalOpen = false;
     noticeRecipientBranchState = { uch: false, nhnn: false };
   }
+  if (action === "confirm-other-warning-sign") {
+    const warningSignPath = target.dataset.warningSignPath;
+    const warningSign = (getPath(warningSignPath) || "").trim();
+    if (!warningSign) {
+      window.alert("Please enter the other warning sign before continuing.");
+      return;
+    }
+    setPath(warningSignPath, warningSign);
+    renderApp();
+    return;
+  }
+  if (action === "launch-notice-keep-open") {
+    launchMicrosoftForm(false);
+    return;
+  }
+  if (action === "launch-notice-clear-activity") {
+    launchMicrosoftForm(true);
+    return;
+  }
   if (action === "open-epic-copy") {
     epicCopyConfirmOpen = true;
   }
@@ -4475,7 +4561,7 @@ app.addEventListener("click", (event) => {
         renderApp();
         return;
       }
-      window.open(buildMicrosoftFormUrl(), "_blank", "noopener,noreferrer");
+      requestMicrosoftFormLaunch();
     }
   }
   if (action === "continue-mrn-add-later-warning") {
@@ -4519,8 +4605,7 @@ app.addEventListener("click", (event) => {
   if (action === "complete-notice-recipient") {
     noticeRecipientModalOpen = false;
     noticeRecipientBranchState = { uch: false, nhnn: false };
-    const formUrl = buildMicrosoftFormUrl();
-    window.open(formUrl, "_blank", "noopener,noreferrer");
+    requestMicrosoftFormLaunch();
   }
   if (action === "complete-ward-contact") {
     const wardContactValue = activeTab === "visitLog" ? state.visitLog.callCategory.wardContact : state.triage.wardContact;
