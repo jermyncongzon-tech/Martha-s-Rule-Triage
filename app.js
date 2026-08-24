@@ -2573,11 +2573,11 @@ function primaryConcernFormValueForCategory(category = activeFormCategory()) {
 }
 
 function secondaryConcernFormValueForCategory(category = activeFormCategory()) {
-  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : secondaryFormValue(category);
+  return secondaryFormValue(category);
 }
 
 function secondaryConcernMicrosoftFormValueForCategory(category = activeFormCategory()) {
-  return calculateUrgencyFromCategory(category) === "U1_immediate_emergency" ? "U1-skipped" : secondaryMicrosoftFormValue(category);
+  return secondaryMicrosoftFormValue(category);
 }
 
 function coreConcernMappedFormValueForCategory(category = activeFormCategory()) {
@@ -3002,8 +3002,11 @@ function callerTypeFormLabel() {
 function warningSignsFormDetail(category = activeFormCategory()) {
   const warningSigns = (category.redFlags || []).filter((item) => item !== "none");
   if (!warningSigns.length) return "None";
-  const labels = warningSigns.map((value) => optionLabel(redFlagOptions, value));
-  if (category.otherRedFlagText) labels.push(`Other detail: ${category.otherRedFlagText}`);
+  const labels = warningSigns.map((value) => {
+    if (value !== "other") return optionLabel(redFlagOptions, value);
+    const detail = (category.otherRedFlagText || "").trim();
+    return detail ? `Other: ${detail}` : "Other";
+  });
   return labels.join(" | ");
 }
 

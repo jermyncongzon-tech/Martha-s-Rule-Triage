@@ -28,7 +28,7 @@
             <tr style="background:#F7FBFB;">
               <td style="padding:11px 12px; text-align:center; color:#007A78; font-size:16px; font-weight:700; border-top:1px solid #d9e7e7;">4</td>
               <td style="padding:11px 12px; font-weight:700; border-top:1px solid #d9e7e7;">Secondary concern</td>
-              <td style="padding:11px 12px; border-top:1px solid #d9e7e7;">@{if(equals(outputs('Get_response_details')?['body/r267fb377cf3f4dde8589f7163ac990ad'],'U1-skipped'),'Skipped automatically due to an acute warning sign',outputs('Get_response_details')?['body/r267fb377cf3f4dde8589f7163ac990ad'])}</td>
+              <td style="padding:11px 12px; border-top:1px solid #d9e7e7;">@{outputs('Get_response_details')?['body/r267fb377cf3f4dde8589f7163ac990ad']}</td>
             </tr>
             <tr>
               <td style="padding:11px 12px; text-align:center; color:#007A78; font-size:16px; font-weight:700; border-top:1px solid #d9e7e7;">5</td>
