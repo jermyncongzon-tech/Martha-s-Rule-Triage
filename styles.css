@@ -1955,6 +1955,24 @@ textarea:focus {
   padding: 14px;
 }
 
+.warning-sign-detail {
+  display: grid;
+  gap: 6px;
+}
+
+.warning-sign-detail.is-missing input {
+  background: #fff7f7;
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+.warning-sign-required {
+  color: #b91c1c;
+  font-size: 0.86rem;
+  font-weight: 750;
+  margin: 0;
+}
+
 .details-card {
   border: 1px solid var(--line);
   border-radius: 8px;

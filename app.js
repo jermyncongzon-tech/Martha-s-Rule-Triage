@@ -5,6 +5,7 @@ const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/Respo
 const APP_VERSION = "20260723-0003";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
+const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
 const MULTI_SELECT_FORM_DELIMITER = " | ";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
   mrn: ["mrn", "MRN"],
@@ -1370,7 +1371,7 @@ function renderTriageSection() {
   const triage = state.triage;
   const showRedFlags = triage.acuteDeterioration === "yes" || triage.acuteDeterioration === "unsure";
   const skipSameDayReview = shouldAutoRouteToPerrt(triage);
-  const redFlagsAnswered = !showRedFlags || triage.redFlags.length > 0;
+  const redFlagsAnswered = !showRedFlags || warningSignsAreComplete(triage);
   const showCoreConcern = triage.acuteDeterioration === "no" || (showRedFlags && redFlagsAnswered);
   const autoRouteNotice = hasSelectedWarningSigns(triage)
     ? "Acute warning signs have been selected. This call will be routed as U1 for immediate PERRT/Outreach review, so the separate PERRT review question is not needed."
@@ -1389,7 +1390,7 @@ function renderTriageSection() {
 
       ${showRedFlags ? triageQuestionCard("2", "Warning signs", `
           ${checkboxGroup("Acute warning signs", "triage.redFlags", redFlagOptions, true)}
-          ${(triage.redFlags || []).includes("other") ? field("Other warning sign", "triage.otherRedFlagText", "text", "Add warning sign") : ""}
+          ${renderOtherWarningSignField("triage.otherRedFlagText", triage)}
         `) : ""}
 
       ${showCoreConcern ? triageQuestionCard("3", "Primary concern", `
@@ -1529,7 +1530,7 @@ function renderCallCategoryCascade() {
   const category = state.visitLog.callCategory;
   const showRedFlags = category.acuteDeterioration === "yes" || category.acuteDeterioration === "unsure";
   const skipSameDayReview = shouldAutoRouteToPerrt(category);
-  const redFlagsAnswered = !showRedFlags || category.redFlags.length > 0;
+  const redFlagsAnswered = !showRedFlags || warningSignsAreComplete(category);
   const showCoreConcern = category.acuteDeterioration === "no" || (showRedFlags && redFlagsAnswered);
   const autoRouteNotice = hasSelectedWarningSigns(category)
     ? "Acute warning signs have been selected. This call will be routed as U1 for immediate PERRT/Outreach review, so the separate PERRT review question is not needed."
@@ -1548,7 +1549,7 @@ function renderCallCategoryCascade() {
 
       ${showRedFlags ? triageQuestionCard("2", "Warning signs", `
           ${checkboxGroup("Acute warning signs", "visitLog.callCategory.redFlags", redFlagOptions, true)}
-          ${(category.redFlags || []).includes("other") ? field("Other warning sign", "visitLog.callCategory.otherRedFlagText", "text", "Add warning sign") : ""}
+          ${renderOtherWarningSignField("visitLog.callCategory.otherRedFlagText", category)}
         `) : ""}
 
       ${showCoreConcern ? triageQuestionCard("3", "Primary concern", `
@@ -2288,6 +2289,20 @@ function field(label, path, type = "text", placeholder = "", inputmode = "", max
   `;
 }
 
+function renderOtherWarningSignField(path, category) {
+  if (!(category.redFlags || []).includes("other")) return "";
+  const isMissing = !(category.otherRedFlagText || "").trim();
+  return `
+    <div class="warning-sign-detail${isMissing ? " is-missing" : ""}">
+      <label class="field">
+        <span>Other warning sign <strong aria-hidden="true">*</strong></span>
+        <input type="text" data-bind="${escapeHtml(path)}" value="${escapeHtml(category.otherRedFlagText || "")}" placeholder="Describe the warning sign" required aria-required="true" aria-invalid="${isMissing ? "true" : "false"}" />
+      </label>
+      ${isMissing ? `<p class="warning-sign-required">Enter the warning sign before continuing to the primary concern.</p>` : ""}
+    </div>
+  `;
+}
+
 function textarea(label, path, placeholder = "", size = "", maxlength = FREE_TEXT_LIMIT) {
   const value = getPath(path) || "";
   return `
@@ -2447,6 +2462,11 @@ function hasSelectedWarningSigns(category) {
 
 function shouldAskRedFlags(category) {
   return category.acuteDeterioration === "yes" || category.acuteDeterioration === "unsure";
+}
+
+function warningSignsAreComplete(category) {
+  const redFlags = category.redFlags || [];
+  return redFlags.length > 0 && (!redFlags.includes("other") || Boolean((category.otherRedFlagText || "").trim()));
 }
 
 function shouldAutoRouteToPerrt(category) {
@@ -2643,7 +2663,7 @@ function currentVisitLogCategoryMissingFields() {
 function triageCategoryMissingFields(category) {
   const missing = [];
   const redFlagsRequired = shouldAskRedFlags(category);
-  const redFlagsAnswered = !redFlagsRequired || (category.redFlags || []).length > 0;
+  const redFlagsAnswered = !redFlagsRequired || warningSignsAreComplete(category);
   const shouldHaveCoreConcern = category.acuteDeterioration === "no" || (shouldAskRedFlags(category) && redFlagsAnswered);
   const hasCoreConcern = Boolean(category.coreConcern);
   const hasSecondary = (category.secondaryFactors || []).length > 0;
@@ -2652,7 +2672,9 @@ function triageCategoryMissingFields(category) {
   const shouldHaveWardContact = shouldHaveSecondary && (hasSecondary || hasGenuineWorryAnswer);
 
   if (!category.acuteDeterioration) missing.push("acute deterioration question");
-  if (redFlagsRequired && !redFlagsAnswered) missing.push("acute warning signs");
+  if (redFlagsRequired && !redFlagsAnswered) {
+    missing.push((category.redFlags || []).includes("other") ? "other warning sign detail" : "acute warning signs");
+  }
   if (shouldHaveCoreConcern && !hasCoreConcern) missing.push("core concern");
   if (requiresSameDayReviewQuestion(category) && !category.sameDayReview) missing.push("PERRT/Outreach review question");
   if (shouldHaveSecondary && !hasSecondary && !hasGenuineWorryAnswer) missing.push("secondary concern or genuine-worry answer");
@@ -2932,8 +2954,8 @@ function learningStatusLabel() {
 }
 
 function sameDayReviewFormLabel(category = activeFormCategory()) {
-  if (hasSelectedWarningSigns(category)) return "Yes - automatically routed because acute warning signs were selected";
-  if (shouldAutoRouteToPerrt(category)) return "Yes - automatically routed because acute deterioration was selected";
+  // This is a Microsoft Forms choice field, so automatic routes must use its exact option.
+  if (hasSelectedWarningSigns(category) || shouldAutoRouteToPerrt(category)) return "Yes";
   if (!category.sameDayReview) return "";
   if (category.sameDayReview === "yes") return "Yes";
   if (category.sameDayReview === "no") return "No";
@@ -2951,6 +2973,17 @@ function warningSignsFormDetail(category = activeFormCategory()) {
   const labels = warningSigns.map((value) => optionLabel(redFlagOptions, value));
   if (category.otherRedFlagText) labels.push(`Other detail: ${category.otherRedFlagText}`);
   return labels.join(" | ");
+}
+
+function warningSignsMicrosoftFormValue(category = activeFormCategory()) {
+  if (!shouldAskRedFlags(category)) return "Not applicable - non-acute deterioration";
+  if (!warningSignsAreComplete(category)) return "";
+  if (!hasSelectedWarningSigns(category)) return "No warning signs selected";
+  return warningSignsFormDetail(category);
+}
+
+function triageAdditionalInformationFormValue(category = activeFormCategory()) {
+  return state.concernSummary.concernsSummary || "";
 }
 
 function categoryOfCallLabel(category = activeFormCategory()) {
@@ -3098,11 +3131,12 @@ function buildMicrosoftFormUrl() {
     ["rff487e35c7034b4199c9e5e05f1a1d9b", rawValue(nhseNonAcuteCategoryFormValue(category))],
     ["r78896ccbec904d53a48753318de935e2", rawValue(noticeRecipientFormValue())],
     ["r39f66a7d3a6e490ca8cb00c92e987f42", rawValue(acuteNonAcuteFormValue(category))],
+    [TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD, rawValue(warningSignsMicrosoftFormValue(category))],
     ["r07a6bc2130884fbdab35c6a9771103f6", rawValue(primaryConcernFormValueForCategory(category))],
     ["r2a55ea2436a747179be777730d105534", quotedIfPresent(sameDayReviewFormLabel(category))],
     ["r267fb377cf3f4dde8589f7163ac990ad", rawValue(secondaryConcernMicrosoftFormValueForCategory(category))],
     ["r23794c7a44244c0fb226d486388fd7d2", rawValue(wardContactLabel(category.wardContact))],
-    ["rbf815cbaa1c240c3a6bb0b3da063d843", rawValue(state.concernSummary.concernsSummary)],
+    ["rbf815cbaa1c240c3a6bb0b3da063d843", rawValue(triageAdditionalInformationFormValue(category))],
   ];
 
   params.forEach(([key, value]) => {
