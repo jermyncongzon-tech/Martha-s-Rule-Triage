@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0006";
+const APP_VERSION = "20260723-0007";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -606,6 +606,7 @@ const perrtActionOptions = [
   ["phone_advice_only", "Phone advice only"],
   ["safety_netting", "Safety netting"],
   ["clinical_review_suggestions", "Clinical review & suggestions"],
+  ["no_action_required", "No PERRT action required / not applicable"],
   ["other", "Other"],
 ];
 
@@ -617,6 +618,7 @@ const outcomeOptions = [
   ["Transferred to enhance level", "Transferred to enhance level"],
   ["Transferred to tertiary care (on or off site)", "Transferred to tertiary care (on or off site)"],
   ["End of life pathway initiated or upheld (not for Critical Care)", "End of life pathway initiated or upheld (not for Critical Care)"],
+  ["Outcome not yet known / not available", "Outcome not yet known / not available"],
   ["Other", "Other"],
 ];
 
@@ -935,8 +937,8 @@ function isVisitLogStepComplete(stepId) {
     return visit.recategoriseCall === "no" || (visit.recategoriseCall === "yes" && triageCategoryIsComplete(visit.callCategory));
   }
   if (stepId === "learningNotifications") {
-    const learningComplete = visit.actionsOutcomes.learningIdentified === "no" ||
-      Boolean(visit.actionsOutcomes.learningIdentified && visit.actionsOutcomes.learningTheme);
+    const learningComplete = ["no", "pending"].includes(visit.actionsOutcomes.learningIdentified) ||
+      Boolean(visit.actionsOutcomes.learningIdentified === "yes" && visit.actionsOutcomes.learningTheme);
     return Boolean(learningComplete);
   }
   if (stepId === "visitLogActions") {
@@ -1005,8 +1007,8 @@ function renderVisitLogClinicalAssessmentSection() {
         <section class="visit-log-info-card visit-log-notes-card">
           <h4>Assessment and notes</h4>
           <div class="visit-log-card-grid">
-            ${field("NEWS2 score at time of call", "visitLog.clinicalAssessment.news2AtCall", "number")}
-            ${field("NEWS2 score at time of attendance", "visitLog.clinicalAssessment.news2AtAttendance", "number")}
+            ${newsScoreField("NEWS2 score at time of call", "visitLog.clinicalAssessment.news2AtCall")}
+            ${newsScoreField("NEWS2 score at time of attendance", "visitLog.clinicalAssessment.news2AtAttendance")}
             ${textarea("Additional clinical notes", "visitLog.clinicalAssessment.additionalClinicalNotes", "", "large", REVIEW_NOTES_LIMIT)}
           </div>
         </section>
@@ -2314,6 +2316,20 @@ function field(label, path, type = "text", placeholder = "", inputmode = "", max
     <label class="field">
       <span>${escapeHtml(label)}</span>
       <input type="${type}" data-bind="${path}" value="${escapeHtml(getPath(path) || "")}" placeholder="${escapeHtml(placeholder)}"${inputmode ? ` inputmode="${escapeHtml(inputmode)}"` : ""}${maxlength ? ` maxlength="${escapeHtml(String(maxlength))}"` : ""} />
+    </label>
+  `;
+}
+
+function newsScoreField(label, path) {
+  const value = getPath(path) || "";
+  const notAvailable = value === "N/A";
+  return `
+    <label class="field news-score-field">
+      <span>${escapeHtml(label)}</span>
+      <div class="news-score-input-row">
+        <input type="number" min="0" data-bind="${escapeHtml(path)}" value="${escapeHtml(notAvailable ? "" : value)}" placeholder="Enter NEWS2 score" ${notAvailable ? "disabled" : ""} />
+        <button class="btn secondary news-score-na" type="button" data-action="toggle-news-score-na" data-path="${escapeHtml(path)}" aria-pressed="${notAvailable ? "true" : "false"}">${notAvailable ? "N/A selected" : "N/A"}</button>
+      </div>
     </label>
   `;
 }
@@ -4210,7 +4226,8 @@ function returnToSafeStartPage() {
   const safeStartUrl = new URL(window.location.href);
   safeStartUrl.search = "";
   safeStartUrl.hash = "";
-  window.location.href = safeStartUrl.href;
+  // Replace the completed activity so mobile Back cannot reveal the cleared log.
+  window.location.replace(safeStartUrl.href);
 }
 
 function closeVisitLogReviewApp() {
@@ -4498,6 +4515,10 @@ app.addEventListener("click", (event) => {
   }
   if (action === "set-mrn-add-later") {
     state.patient.mrn = "Add later";
+  }
+  if (action === "toggle-news-score-na") {
+    const path = target.dataset.path || "";
+    setPath(path, getPath(path) === "N/A" ? "" : "N/A");
   }
   if (action === "start-mode") {
     activeTab = target.dataset.tab || "triage";

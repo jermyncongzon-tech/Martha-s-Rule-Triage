@@ -2707,6 +2707,27 @@ textarea:focus {
   width: 100%;
 }
 
+.news-score-input-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+
+.news-score-input-row input {
+  min-width: 0;
+}
+
+.news-score-na {
+  flex: 0 0 auto;
+  min-width: 78px;
+}
+
+.news-score-na[aria-pressed="true"] {
+  background: #e86a10;
+  border-color: #e86a10;
+  color: #ffffff;
+}
+
 .epic-copy-modal-mrn {
   align-items: center;
   background: linear-gradient(90deg, #eef8f6, #f8fbff);
