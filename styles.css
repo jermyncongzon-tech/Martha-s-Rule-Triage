@@ -2673,6 +2673,40 @@ textarea:focus {
   margin: 0;
 }
 
+.notice-launch-modal {
+  border: 2px solid #007a78;
+  max-width: 680px;
+}
+
+.notice-launch-header {
+  background: linear-gradient(135deg, #004746, #007a78 58%, #0e9f9a);
+  padding: 26px 30px;
+}
+
+.notice-launch-header h2 {
+  font-size: 1.55rem;
+}
+
+.notice-launch-body {
+  gap: 18px;
+  padding: 28px 30px 30px;
+}
+
+.notice-launch-reminder {
+  background: #fff7e8;
+  border: 2px solid #e86a10;
+  border-radius: 12px;
+  color: #613200 !important;
+  font-size: 1.1rem;
+  padding: 18px 20px;
+}
+
+.notice-launch-actions .btn {
+  font-size: 1rem;
+  min-height: 52px;
+  width: 100%;
+}
+
 .epic-copy-modal-mrn {
   align-items: center;
   background: linear-gradient(90deg, #eef8f6, #f8fbff);

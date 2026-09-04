@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0005";
+const APP_VERSION = "20260723-0006";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -1769,18 +1769,18 @@ function renderNoticeLaunchConfirmModal() {
   if (!noticeLaunchConfirmOpen) return "";
   return `
     <div class="modal-backdrop">
-      <section class="epic-copy-modal" role="dialog" aria-modal="true" aria-labelledby="notice-launch-title">
-        <div class="modal-header">
+      <section class="epic-copy-modal notice-launch-modal" role="dialog" aria-modal="true" aria-labelledby="notice-launch-title">
+        <div class="modal-header notice-launch-header">
           <div>
-            <h2 id="notice-launch-title">Open Microsoft Form</h2>
-            <p>A pre-filled Microsoft Form will open in a new tab.</p>
+            <h2 id="notice-launch-title">Your notification is ready</h2>
+            <p>You are now being directed to the output of this log.</p>
           </div>
         </div>
-        <div class="epic-copy-modal-body">
-          <p>To prevent repeat notices, choose whether to keep this activity open or clear it after the form opens.</p>
-          <div class="modal-actions">
-            <button class="btn secondary" type="button" data-action="launch-notice-keep-open">Keep this window open</button>
-            <button class="btn primary" type="button" data-action="launch-notice-clear-activity">Open form and clear activity</button>
+        <div class="epic-copy-modal-body notice-launch-body">
+          <p class="notice-launch-reminder">Please do not forget to click <strong>Submit</strong> in the Microsoft Form once you have checked the information.</p>
+          <p>This activity will now be cleared and this app will return to its start page to help prevent duplicate notifications.</p>
+          <div class="modal-actions notice-launch-actions">
+            <button class="btn primary" type="button" data-action="launch-notice-form">Continue to Microsoft Form</button>
           </div>
         </div>
       </section>
@@ -3240,12 +3240,12 @@ function requestMicrosoftFormLaunch() {
   renderApp();
 }
 
-function launchMicrosoftForm(clearActivity) {
+function launchMicrosoftForm() {
   window.open(buildMicrosoftFormUrl(), "_blank", "noopener,noreferrer");
   noticeOpenedForCurrentActivity = true;
   noticeLaunchConfirmOpen = false;
-  if (clearActivity) resetState();
-  renderApp();
+  resetState();
+  returnToSafeStartPage();
 }
 
 function generateStructuredSummary() {
@@ -4207,7 +4207,10 @@ function resetState() {
 function returnToSafeStartPage() {
   visitLogReviewConfirmOpen = false;
   visitLogReviewConfirmChecked = false;
-  window.location.href = `${window.location.origin}${window.location.pathname}`;
+  const safeStartUrl = new URL(window.location.href);
+  safeStartUrl.search = "";
+  safeStartUrl.hash = "";
+  window.location.href = safeStartUrl.href;
 }
 
 function closeVisitLogReviewApp() {
@@ -4539,12 +4542,8 @@ app.addEventListener("click", (event) => {
     renderApp();
     return;
   }
-  if (action === "launch-notice-keep-open") {
-    launchMicrosoftForm(false);
-    return;
-  }
-  if (action === "launch-notice-clear-activity") {
-    launchMicrosoftForm(true);
+  if (action === "launch-notice-form") {
+    launchMicrosoftForm();
     return;
   }
   if (action === "open-epic-copy") {
