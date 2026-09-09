@@ -2707,6 +2707,25 @@ textarea:focus {
   width: 100%;
 }
 
+.notice-launch-close {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.96);
+  border-color: transparent;
+  color: #004746;
+  display: inline-flex;
+  font-size: 1.1rem;
+  font-weight: 900;
+  height: 40px;
+  justify-content: center;
+  padding: 0;
+  width: 40px;
+}
+
+.notice-launch-close:hover {
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
 .news-score-input-row {
   align-items: center;
   display: flex;

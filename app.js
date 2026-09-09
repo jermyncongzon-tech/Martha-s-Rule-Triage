@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0007";
+const APP_VERSION = "20260723-0008";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -1770,13 +1770,14 @@ function renderNoticeRecipientModal() {
 function renderNoticeLaunchConfirmModal() {
   if (!noticeLaunchConfirmOpen) return "";
   return `
-    <div class="modal-backdrop">
+    <div class="modal-backdrop" data-modal-lock="notice-launch-confirm">
       <section class="epic-copy-modal notice-launch-modal" role="dialog" aria-modal="true" aria-labelledby="notice-launch-title">
         <div class="modal-header notice-launch-header">
           <div>
             <h2 id="notice-launch-title">Your notification is ready</h2>
             <p>You are now being directed to the output of this log.</p>
           </div>
+          <button class="btn secondary modal-close notice-launch-close" type="button" data-action="close-notice-launch-and-clear" aria-label="Close and clear this activity">X</button>
         </div>
         <div class="epic-copy-modal-body notice-launch-body">
           <p class="notice-launch-reminder">Please do not forget to click <strong>Submit</strong> in the Microsoft Form once you have checked the information.</p>
@@ -4453,7 +4454,7 @@ window.addEventListener("pointercancel", endHandoverWindowDrag);
 
 app.addEventListener("click", (event) => {
   if (event.target.classList.contains("modal-backdrop")) {
-    if (event.target.dataset.modalLock === "visit-log-review-confirm") return;
+    if (["visit-log-review-confirm", "notice-launch-confirm"].includes(event.target.dataset.modalLock)) return;
     urgencyGuideOpen = false;
     selectedUrgencyGuide = "";
     selectedConcernHelp = "";
@@ -4565,6 +4566,11 @@ app.addEventListener("click", (event) => {
   }
   if (action === "launch-notice-form") {
     launchMicrosoftForm();
+    return;
+  }
+  if (action === "close-notice-launch-and-clear") {
+    resetState();
+    returnToSafeStartPage();
     return;
   }
   if (action === "open-epic-copy") {
