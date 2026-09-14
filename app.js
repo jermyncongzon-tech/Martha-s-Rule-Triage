@@ -2,10 +2,11 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0008";
+const APP_VERSION = "20260723-0009";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
+const TRIAGE_MENTAL_HEALTH_MICROSOFT_FORM_FIELD = "rd23147bdfc364692a9b890ce58b81336";
 const MULTI_SELECT_FORM_DELIMITER = " | ";
 const VISIT_LOG_PREFILL_QUERY_PARAMS = {
   mrn: ["mrn", "MRN"],
@@ -105,6 +106,7 @@ const defaultState = {
     alreadyTried: "",
     unresolved: "",
     concernsSummary: "",
+    mentalHealthConcern: "",
   },
   patient: {
     mrn: "",
@@ -1183,7 +1185,7 @@ function isStepComplete(stepId) {
   if (stepId === "location") return wardAreaComplete(state.location.wardArea, state.location.wardAreaOther);
   if (stepId === "caller") return Boolean(state.caller.callerType);
   if (stepId === "triage") return triageCategoryIsComplete(state.triage);
-  if (stepId === "concernSummary") return Boolean(state.concernSummary.concernsSummary);
+  if (stepId === "concernSummary") return Boolean(state.concernSummary.concernsSummary && state.concernSummary.mentalHealthConcern);
   if (stepId === "repeatCallUpdate") return repeatCallUpdateIsComplete();
   if (stepId === "repeatContactReason") return Boolean(state.repeatCallUpdate.additionalInformation);
   if (stepId === "triageRouteAction") return isReadyForPrefilledForm();
@@ -1598,6 +1600,7 @@ function renderConcernSummarySection() {
   return `
     <div class="field-grid">
       ${textarea("Concerns raised by caller (summary)", "concernSummary.concernsSummary", "", "large")}
+      ${radioGroup("Is a mental health concern relevant to this call?", "concernSummary.mentalHealthConcern", [["yes", "Yes"], ["no", "No"], ["unsure", "Unsure"]])}
     </div>
   `;
 }
@@ -1871,6 +1874,7 @@ function renderSummaryPanel() {
       ${summaryRow("Ward / area", locationWardAreaDisplayValue() || "Not entered")}
       ${summaryRow("Specialty", state.location.specialtyMedicalTeam || "Not entered")}
       ${summaryRow("Short concern summary", state.concernSummary.concernsSummary || "Not entered")}
+      ${summaryRow("Mental health concern relevant", mentalHealthConcernLabel())}
       ${summaryRow("Red flags present", redFlagsPresent ? "Yes" : "No")}
       `}
     </div>
@@ -1895,6 +1899,7 @@ function renderRepeatSummaryPanel() {
       ${summaryRow("Bed number", state.location.bedNumber || "Not entered")}
       ${summaryRow("Caller", callerTypeFormLabel() || "Not selected")}
       ${summaryRow("Caller concern summary", state.concernSummary.concernsSummary || "Not entered")}
+      ${summaryRow("Mental health concern relevant", mentalHealthConcernLabel())}
       ${summaryRow("Urgency code", categoryDisplayLabel(urgency))}
       ${summaryRow("PERRT review indicated", triageReviewRequiredLabel(urgency))}
       ${summaryRow("Next step", triageNextStepMessage(urgency))}
@@ -2499,6 +2504,16 @@ function wardContactLabel(value) {
   return "Not selected";
 }
 
+function mentalHealthConcernLabel() {
+  return optionLabel([[
+    "yes", "Yes",
+  ], [
+    "no", "No",
+  ], [
+    "unsure", "Unsure",
+  ]], state.concernSummary.mentalHealthConcern);
+}
+
 function calculateUrgency() {
   return calculateUrgencyFromCategory(state.triage);
 }
@@ -2676,6 +2691,7 @@ function calculateCompleteness() {
       { label: "Ward / area entered", done: wardAreaComplete(state.location.wardArea, state.location.wardAreaOther) },
       { label: "Repeat-call triage completed", done: triageCategoryIsComplete(state.triage) },
       { label: "Caller concern summary entered", done: Boolean(state.concernSummary.concernsSummary) },
+      { label: "Mental health concern answered", done: Boolean(state.concernSummary.mentalHealthConcern) },
     ];
   }
 
@@ -2685,6 +2701,7 @@ function calculateCompleteness() {
     { label: "Caller type recorded", done: Boolean(state.caller.callerType) },
     { label: "Triage questions completed", done: triageCategoryIsComplete(state.triage) },
     { label: "Caller concern summary entered", done: Boolean(state.concernSummary.concernsSummary) },
+    { label: "Mental health concern answered", done: Boolean(state.concernSummary.mentalHealthConcern) },
     { label: "Patient MRN entered", done: Boolean(state.patient.mrn) },
     { label: "Patient date of birth entered", done: Boolean(state.patient.dob) },
     { label: "Ward / area entered", done: wardAreaComplete(state.location.wardArea, state.location.wardAreaOther) },
@@ -3189,6 +3206,7 @@ function buildMicrosoftFormUrl() {
     ["r267fb377cf3f4dde8589f7163ac990ad", rawValue(secondaryConcernMicrosoftFormValueForCategory(category))],
     ["r23794c7a44244c0fb226d486388fd7d2", rawValue(wardContactLabel(category.wardContact))],
     ["rbf815cbaa1c240c3a6bb0b3da063d843", rawValue(triageAdditionalInformationFormValue(category))],
+    [TRIAGE_MENTAL_HEALTH_MICROSOFT_FORM_FIELD, rawValue(mentalHealthConcernLabel())],
   ];
 
   params.forEach(([key, value]) => {
@@ -3267,7 +3285,7 @@ function launchMicrosoftForm() {
 
 function generateStructuredSummary() {
   if (isRepeatOnlyMode()) {
-    state.generatedSummary = `This is a repeat Martha's Rule call received on ${valueOr(state.callDetails.dateOfReferral)} at ${valueOr(state.callDetails.timePhoneAnswered)} by a caller recorded as ${valueOr(callerTypeFormLabel(), "not selected")}. The patient details recorded were MRN ${valueOr(state.patient.mrn)}, date of birth ${valueOr(state.patient.dob)}, gender ${valueOr(state.patient.gender)}. The patient was located on ${valueOr(locationWardAreaDisplayValue())}${state.location.bedNumber ? `, bed ${state.location.bedNumber}` : ""}. The caller's concern summary was: ${valueOr(state.concernSummary.concernsSummary)}. The primary concern recorded was ${valueOr(repeatPrimaryConcernFormValue(), "not entered")}. Secondary concern recorded: ${valueOr(repeatSecondaryConcernFormValue(), "not entered")}. Ward contact status was ${wardContactLabel(state.triage.wardContact)}.`;
+    state.generatedSummary = `This is a repeat Martha's Rule call received on ${valueOr(state.callDetails.dateOfReferral)} at ${valueOr(state.callDetails.timePhoneAnswered)} by a caller recorded as ${valueOr(callerTypeFormLabel(), "not selected")}. The patient details recorded were MRN ${valueOr(state.patient.mrn)}, date of birth ${valueOr(state.patient.dob)}, gender ${valueOr(state.patient.gender)}. The patient was located on ${valueOr(locationWardAreaDisplayValue())}${state.location.bedNumber ? `, bed ${state.location.bedNumber}` : ""}. The caller's concern summary was: ${valueOr(state.concernSummary.concernsSummary)}. Mental health concern relevant to this call: ${valueOr(mentalHealthConcernLabel())}. The primary concern recorded was ${valueOr(repeatPrimaryConcernFormValue(), "not entered")}. Secondary concern recorded: ${valueOr(repeatSecondaryConcernFormValue(), "not entered")}. Ward contact status was ${wardContactLabel(state.triage.wardContact)}.`;
     state.generatedSummaryHtml = buildStructuredSummaryHtml();
     return;
   }
@@ -3319,7 +3337,7 @@ Call category: ${categoryText}
 
 The core concern was ${concern}.${warningDetails} Secondary concerns recorded: ${secondaryConcerns}. Ward contact status was ${wardContactLabel(category.wardContact)}.
 
-The caller's main concern was summarised as: ${valueOr(state.concernSummary.concernsSummary)}.${hasVisitLog ? `
+The caller's main concern was summarised as: ${valueOr(state.concernSummary.concernsSummary)}. Mental health concern relevant to this call: ${valueOr(mentalHealthConcernLabel())}.${hasVisitLog ? `
 
 Patient review log: Learning disability or neurodiversity status was ${valueOr(state.patient.learningDisabilityNeurodiversity)}. Date of visit was ${valueOr(visit.dateOfVisit)}. PERRT/Outreach attendance time was ${valueOr(visit.timeOfAttendance)}. NEWS2 at call was ${valueOr(visit.clinicalAssessment.news2AtCall)} and NEWS2 at attendance was ${valueOr(visit.clinicalAssessment.news2AtAttendance)}. Additional clinical notes: ${valueOr(visit.clinicalAssessment.additionalClinicalNotes)}. Actions taken: ${listLabels(perrtActionOptions, visit.actionsOutcomes.perrtActionsTaken)}. Outcomes recorded: ${listLabels(outcomeOptions, visit.actionsOutcomes.outcomes)}.` : ""}`;
   state.generatedSummaryHtml = buildStructuredSummaryHtml();
@@ -3378,6 +3396,7 @@ function buildStructuredSummaryHtml() {
         ])}
         ${summarySectionHtml("Repeat Call Details", [
           summaryRowHtml("Caller concern summary", state.concernSummary.concernsSummary),
+          summaryRowHtml("Mental health concern relevant to this call", mentalHealthConcernLabel()),
           summaryRowHtml("Primary concern", repeatPrimaryConcernFormValue()),
           summaryRowHtml("Secondary concern", repeatSecondaryConcernFormValue()),
           summaryRowHtml("Has the caller spoken to the ward?", wardContactLabel(state.triage.wardContact)),
@@ -3426,6 +3445,7 @@ function buildStructuredSummaryHtml() {
       ${summarySectionHtml("Caller Concern", [
         summaryRowHtml("Main reason for call", primaryConcernFormValueForCategory(category)),
         summaryRowHtml("Caller concern summary", state.concernSummary.concernsSummary),
+        summaryRowHtml("Mental health concern relevant to this call", mentalHealthConcernLabel()),
         ...(includeWarningDetails ? [summaryRowHtml("Red flags recorded", listLabels(redFlagOptions, category.redFlags))] : []),
         ...(includeWarningDetails && category.otherRedFlagText ? [summaryRowHtml("Other warning sign", category.otherRedFlagText)] : []),
         summaryRowHtml("Why did the caller use the phoneline?", secondaryConcernFormValueForCategory(category)),
@@ -3606,6 +3626,7 @@ ${emailSegment("Current Concern Details", [
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
 ${emailSegment("Current Repeat Call Update", [
   emailRow("Caller concern summary", state.concernSummary.concernsSummary, false, { vertical: true, wrap: true }),
+  emailRow("Mental health concern relevant to this call", mentalHealthConcernLabel(), true),
 ]).replace(/#007A78/g, "#4F5F2F").replace(/#d9e7e7/g, "#d8dfca").replace(/#C9DEDC/g, "#c7d2b4")}
                   <div style="height:14px; line-height:14px;">&nbsp;</div>
                   <table cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate; border-spacing:0; width:100%; border:2px solid #4F5F2F; border-radius:14px;">
@@ -3813,6 +3834,7 @@ ${emailSegment("Caller Concern", [
   emailRow("Who made the call?", callerTypeFormLabel()),
   emailRow("Main reason for call", mainReason, true, { strong: true, wrap: true }),
   emailRow("Additional information", additionalInformation, false, { vertical: true, wrap: true }),
+  emailRow("Mental health concern relevant to this call", mentalHealthConcernLabel(), true),
   emailRow("Why did the caller use the phoneline?", secondaryConcern, true),
   emailRow("Has the caller spoken to the ward?", wardContact, false, { strong: true }),
 ])}
@@ -3889,6 +3911,7 @@ function buildCsvRows() {
       ["Location", "Bed number", state.location.bedNumber],
       ["Location", "Specialty / Medical team", state.location.specialtyMedicalTeam],
       ["Concern summary", "Caller concern summary", state.concernSummary.concernsSummary],
+      ["Concern summary", "Mental health concern relevant to this call", mentalHealthConcernLabel()],
       ["Triage", "Primary concern", repeatPrimaryConcernFormValue()],
       ["Triage", "Secondary concern", repeatSecondaryConcernFormValue()],
       ["Triage", "Ward contact", wardContactLabel(state.triage.wardContact)],
@@ -3932,6 +3955,7 @@ function buildCsvRows() {
     ["Triage", "Secondary concerns", secondaryConcernFormValueForCategory(category)],
     ["Triage", "Ward contacted", wardContactLabel(category.wardContact)],
     ["Concern summary", "Concerns raised by caller", state.concernSummary.concernsSummary],
+    ["Concern summary", "Mental health concern relevant to this call", mentalHealthConcernLabel()],
     ["Clinical assessment", "NEWS2 at time of call", state.visitLog.clinicalAssessment.news2AtCall],
     ["Clinical assessment", "NEWS2 at time of attendance", state.visitLog.clinicalAssessment.news2AtAttendance],
     ["Clinical assessment", "Additional clinical notes", state.visitLog.clinicalAssessment.additionalClinicalNotes],
