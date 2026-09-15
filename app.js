@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0009";
+const APP_VERSION = "20260723-0010";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -452,9 +452,17 @@ const ethnicGroupOptions = [
 const wardAreaSuggestions = [
   "EGA 2nd Floor Neonatal Unit",
   "EGA Early Pregnancy Unit",
+  "EGA L01 MFAU",
+  "EGA L02 LABOUR WARD",
+  "EGA L02 COB",
+  "EGA L02 NEONATAL UNIT",
   "EGA L03 ACU",
+  "EGA L03 MCU",
+  "EGA L03 BC",
+  "EGA L03 FITZ",
   "EGA Lower Ground Paediatric Outpatients",
   "EGA Lower Ground Urogynaecology",
+  "Children’s Outpatients, Basement EGA",
   "GWB 1st Floor Grafton Way Elective Orthopaedics",
   "GWB 2nd Floor East Haematology",
   "GWB 2nd Floor North Haematology",
@@ -477,10 +485,16 @@ const wardAreaSuggestions = [
   "UCH T10 N",
   "UCH T10 S",
   "UCH T11",
+  "UCH T11 North",
+  "UCH T11 South",
+  "UCH T11 East, T2",
   "UCH T12",
+  "UCH T12 North",
+  "UCH T12 South",
   "UCH T13 Oncology",
   "UCH T14 North Head & Neck Ward",
   "UCH T14 Women’s Health",
+  "TYA Daycare, 3rd Floor Macmillan",
   "UCH T16 Haematology",
   "WMS Ground Floor Urology Pre-assessment & Outpatients",
   "WMS 1F ITU WMS",
