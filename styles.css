@@ -1960,6 +1960,13 @@ textarea:focus {
   gap: 6px;
 }
 
+.warning-sign-character-limit {
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
 .warning-sign-detail.is-missing input {
   background: #fff7f7;
   border-color: #dc2626;

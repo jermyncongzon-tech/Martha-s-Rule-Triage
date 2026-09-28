@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0010";
+const APP_VERSION = "20260723-0011";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -21,6 +21,9 @@ const VISIT_LOG_PREFILL_QUERY_PARAMS = {
 };
 const FREE_TEXT_LIMIT = 500;
 const REVIEW_NOTES_LIMIT = 400;
+const TRIAGE_CALLER_SUMMARY_LIMIT = 250;
+const OTHER_WARNING_SIGN_CHARACTER_LIMIT = 50;
+const OTHER_WARD_AREA_CHARACTER_LIMIT = 50;
 const defaultNoticeRecipientEmails = ["jillian.hartin@nhs.net", "passang.pangri@nhs.net", "uclh.PERRTband8@nhs.net"];
 const noticeRecipientOptions = [
   ["jermyn.congzon@nhs.net", "Jermyn Congzon", "Interface developer", "", "tech"],
@@ -1014,7 +1017,7 @@ function renderVisitLogClinicalAssessmentSection() {
           <h4>Location and timing</h4>
           <div class="visit-log-card-grid">
             ${selectField("Ward / Area", "visitLog.location.wardArea", wardAreaOptions, "Select ward / area")}
-            ${state.visitLog.location.wardArea === "Other" ? field("Other ward / area", "visitLog.location.wardAreaOther", "text", "Enter ward / area") : ""}
+            ${state.visitLog.location.wardArea === "Other" ? field("Other ward / area (max. 50 characters)", "visitLog.location.wardAreaOther", "text", "Enter ward / area", "", OTHER_WARD_AREA_CHARACTER_LIMIT) : ""}
             ${field("Bed number", "visitLog.location.bedNumber")}
             ${field("Date of visit", "visitLog.dateOfVisit", "date")}
             ${field("Time of PERRT/Outreach attendance", "visitLog.timeOfAttendance", "time", "Optional")}
@@ -1369,7 +1372,7 @@ function renderRepeatCallSection() {
     <div class="field-grid">
       ${field("MRN number", "repeatCallUpdate.mrn")}
       ${selectField("Ward / Area", "repeatCallUpdate.wardArea", wardAreaOptions, "Select ward / area")}
-      ${state.repeatCallUpdate.wardArea === "Other" ? field("Other ward / area", "repeatCallUpdate.wardAreaOther", "text", "Enter ward / area") : ""}
+      ${state.repeatCallUpdate.wardArea === "Other" ? field("Other ward / area (max. 50 characters)", "repeatCallUpdate.wardAreaOther", "text", "Enter ward / area", "", OTHER_WARD_AREA_CHARACTER_LIMIT) : ""}
       ${field("Bed number", "repeatCallUpdate.bedNumber")}
       ${radioGroup("Who made the call?", "caller.callerType", callerTypeOptions)}
     </div>
@@ -1613,7 +1616,7 @@ function renderGenuineWorryQuestion(pathPrefix, secondaryFactors) {
 function renderConcernSummarySection() {
   return `
     <div class="field-grid">
-      ${textarea("Concerns raised by caller (summary)", "concernSummary.concernsSummary", "", "large")}
+      ${textarea("Concerns raised by caller (summary)", "concernSummary.concernsSummary", "", "large", TRIAGE_CALLER_SUMMARY_LIMIT)}
       ${radioGroup("Is a mental health concern relevant to this call?", "concernSummary.mentalHealthConcern", [["yes", "Yes"], ["no", "No"], ["unsure", "Unsure"]])}
     </div>
   `;
@@ -1831,7 +1834,7 @@ function renderLocationSection() {
   return `
     <div class="field-grid">
       ${selectField("Ward / Area", "location.wardArea", wardAreaOptions, "Select ward / area")}
-      ${state.location.wardArea === "Other" ? field("Other ward / area", "location.wardAreaOther", "text", "Enter ward / area") : ""}
+      ${state.location.wardArea === "Other" ? field("Other ward / area (max. 50 characters)", "location.wardAreaOther", "text", "Enter ward / area", "", OTHER_WARD_AREA_CHARACTER_LIMIT) : ""}
       ${field("Bed number", "location.bedNumber")}
       ${selectField("Specialty / Medical team", "location.specialtyMedicalTeam", specialtyOptions, "Select specialty / team")}
     </div>
@@ -2335,7 +2338,7 @@ function field(label, path, type = "text", placeholder = "", inputmode = "", max
   return `
     <label class="field">
       <span>${escapeHtml(label)}</span>
-      <input type="${type}" data-bind="${path}" value="${escapeHtml(getPath(path) || "")}" placeholder="${escapeHtml(placeholder)}"${inputmode ? ` inputmode="${escapeHtml(inputmode)}"` : ""}${maxlength ? ` maxlength="${escapeHtml(String(maxlength))}"` : ""} />
+      <input type="${type}" data-bind="${path}"${maxlength ? ` data-character-limit="${escapeHtml(String(maxlength))}"` : ""} value="${escapeHtml(getPath(path) || "")}" placeholder="${escapeHtml(placeholder)}"${inputmode ? ` inputmode="${escapeHtml(inputmode)}"` : ""}${maxlength ? ` maxlength="${escapeHtml(String(maxlength))}"` : ""} />
     </label>
   `;
 }
@@ -2356,13 +2359,15 @@ function newsScoreField(label, path) {
 
 function renderOtherWarningSignField(path, category) {
   if (!(category.redFlags || []).includes("other")) return "";
-  const isMissing = !(category.otherRedFlagText || "").trim();
+  const warningSign = limitToCharacters(category.otherRedFlagText, OTHER_WARNING_SIGN_CHARACTER_LIMIT);
+  const isMissing = !warningSign;
   return `
     <div class="warning-sign-detail${isMissing ? " is-missing" : ""}">
       <label class="field">
         <span>Other warning sign <strong aria-hidden="true">*</strong></span>
-        <input type="text" data-bind="${escapeHtml(path)}" data-warning-sign-path="${escapeHtml(path)}" value="${escapeHtml(category.otherRedFlagText || "")}" placeholder="Describe the warning sign" required aria-required="true" aria-invalid="${isMissing ? "true" : "false"}" />
+        <input type="text" data-bind="${escapeHtml(path)}" data-warning-sign-path="${escapeHtml(path)}" data-character-limit="${OTHER_WARNING_SIGN_CHARACTER_LIMIT}" maxlength="${OTHER_WARNING_SIGN_CHARACTER_LIMIT}" value="${escapeHtml(warningSign)}" placeholder="Describe the warning sign" required aria-required="true" aria-invalid="${isMissing ? "true" : "false"}" />
       </label>
+      <p class="warning-sign-character-limit">Maximum ${OTHER_WARNING_SIGN_CHARACTER_LIMIT} characters.</p>
       ${isMissing ? `<p class="warning-sign-required">Enter the warning sign before continuing to the primary concern.</p>` : ""}
       <button class="btn secondary warning-sign-confirm" type="button" data-action="confirm-other-warning-sign" data-warning-sign-path="${escapeHtml(path)}">Confirm warning sign</button>
     </div>
@@ -2853,6 +2858,10 @@ function rawValue(value) {
   return value || "";
 }
 
+function limitToCharacters(value, maximumCharacters) {
+  return String(value || "").trim().slice(0, maximumCharacters);
+}
+
 function normalizeCaseCode(value) {
   return String(value || "").replace(/[^a-z0-9]/gi, "").slice(0, 6).toUpperCase();
 }
@@ -2965,7 +2974,7 @@ function normalizeWardAreaValues() {
 }
 
 function wardAreaDisplayValue(wardArea, otherWardArea) {
-  if (wardArea === "Other") return otherWardArea || "Other";
+  if (wardArea === "Other") return limitToCharacters(otherWardArea, OTHER_WARD_AREA_CHARACTER_LIMIT) || "Other";
   return wardArea || "";
 }
 
@@ -3052,7 +3061,7 @@ function warningSignsFormDetail(category = activeFormCategory()) {
   if (!warningSigns.length) return "None";
   const labels = warningSigns.map((value) => {
     if (value !== "other") return optionLabel(redFlagOptions, value);
-    const detail = (category.otherRedFlagText || "").trim();
+    const detail = limitToCharacters(category.otherRedFlagText, OTHER_WARNING_SIGN_CHARACTER_LIMIT);
     return detail ? `Other: ${detail}` : "Other";
   });
   return labels.join(" | ");
@@ -4420,7 +4429,12 @@ app.addEventListener("input", (event) => {
   const target = event.target.closest("[data-bind]");
   if (!target || target.type === "radio" || target.type === "checkbox") return;
   const path = target.dataset.bind;
-  const value = path === "visitLog.clinicalAssessment.caseCode" ? normalizeCaseCode(target.value) : target.value;
+  const characterLimit = Number(target.dataset.characterLimit || 0);
+  const value = path === "visitLog.clinicalAssessment.caseCode"
+    ? normalizeCaseCode(target.value)
+    : characterLimit
+      ? limitToCharacters(target.value, characterLimit)
+      : target.value;
   if (value !== target.value) target.value = value;
   setPath(path, value);
   if (target.tagName === "TEXTAREA") {
@@ -4434,7 +4448,7 @@ app.addEventListener("keydown", (event) => {
   const target = event.target.closest("[data-warning-sign-path]");
   if (!target) return;
   event.preventDefault();
-  const warningSign = (getPath(target.dataset.warningSignPath) || "").trim();
+  const warningSign = limitToCharacters(getPath(target.dataset.warningSignPath), OTHER_WARNING_SIGN_CHARACTER_LIMIT);
   if (!warningSign) {
     window.alert("Please enter the other warning sign before continuing.");
     return;
@@ -4593,7 +4607,7 @@ app.addEventListener("click", (event) => {
   }
   if (action === "confirm-other-warning-sign") {
     const warningSignPath = target.dataset.warningSignPath;
-    const warningSign = (getPath(warningSignPath) || "").trim();
+    const warningSign = limitToCharacters(getPath(warningSignPath), OTHER_WARNING_SIGN_CHARACTER_LIMIT);
     if (!warningSign) {
       window.alert("Please enter the other warning sign before continuing.");
       return;
