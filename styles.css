@@ -149,6 +149,9 @@ body.visit-log-mode {
 }
 
 .version-label {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
   color: rgba(255, 255, 255, 0.88);
   font-size: 0.84rem;
   font-weight: 850;
@@ -160,6 +163,102 @@ body.visit-log-mode {
 
 .version-control.app .version-label {
   color: #64748b;
+}
+
+.version-label:hover,
+.version-label:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.release-notes-window {
+  background: linear-gradient(145deg, #ffffff, #f0fdfa);
+  border: 1px solid #99f6e4;
+  border-radius: 14px;
+  bottom: 18px;
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.22);
+  max-width: min(360px, calc(100vw - 36px));
+  padding: 16px;
+  position: fixed;
+  right: 18px;
+  width: 360px;
+  z-index: 15;
+}
+
+.release-notes-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.release-notes-heading p {
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  margin: 0 0 3px;
+  text-transform: uppercase;
+}
+
+.release-notes-heading h2 {
+  color: #134e4a;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.release-notes-close {
+  background: #ffffff;
+  border: 1px solid #99f6e4;
+  border-radius: 50%;
+  color: #115e59;
+  cursor: pointer;
+  font-weight: 900;
+  height: 28px;
+  line-height: 1;
+  padding: 0;
+  width: 28px;
+}
+
+.release-notes-close:hover,
+.release-notes-close:focus-visible {
+  background: #ccfbf1;
+  border-color: #2dd4bf;
+}
+
+.release-notes-list {
+  color: #334155;
+  display: grid;
+  font-size: 0.84rem;
+  gap: 8px;
+  line-height: 1.4;
+  margin: 14px 0 0;
+  padding-left: 19px;
+}
+
+.release-notes-list strong {
+  color: #115e59;
+}
+
+body.dark-mode .release-notes-window {
+  background: linear-gradient(145deg, #0f172a, #132f32);
+  border-color: #2f7c78;
+}
+
+body.dark-mode .release-notes-heading h2,
+body.dark-mode .release-notes-list {
+  color: #e2e8f0;
+}
+
+body.dark-mode .release-notes-heading p,
+body.dark-mode .release-notes-list strong {
+  color: #7dd3c7;
+}
+
+body.dark-mode .release-notes-close {
+  background: #1e293b;
+  border-color: #2f7c78;
+  color: #ccfbf1;
 }
 
 .start-shell h1 {
@@ -4066,6 +4165,13 @@ textarea:focus {
 }
 
 @media (max-width: 720px) {
+  .release-notes-window {
+    bottom: 12px;
+    max-width: calc(100vw - 24px);
+    right: 12px;
+    width: auto;
+  }
+
   .shell {
     padding: 18px 12px 32px;
   }

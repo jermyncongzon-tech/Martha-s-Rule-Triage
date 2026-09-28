@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0011";
+const APP_VERSION = "20260723-0012";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -215,6 +215,7 @@ let handoverDragState = null;
 let handoverWindowMinimized = false;
 let handoverSuppressNextToggle = false;
 let suppressNextRenderAnimations = false;
+let releaseNotesOpen = true;
 
 const triageSteps = [
   { id: "callDetails", title: "Call Details and Timing", render: renderCallDetailsSection },
@@ -760,6 +761,7 @@ function renderApp() {
       ${renderEpicCopyConfirmModal()}
       ${renderVisitLogReviewConfirmModal()}
       ${renderVisitLogHandoverBanner()}
+      ${renderReleaseNotesWindow()}
     </div>
   `;
   runPostRenderEffects();
@@ -787,6 +789,7 @@ function renderStartView() {
         </div>
       </div>
     </main>
+    ${renderReleaseNotesWindow()}
   `;
 }
 
@@ -831,8 +834,29 @@ function renderHeader() {
 function renderVersionControl(context = "app") {
   return `
     <div class="version-control ${context === "start" ? "start" : "app"}">
-      <span class="version-label">Version ${escapeHtml(APP_VERSION)}</span>
+      <button class="version-label" type="button" data-action="open-release-notes">Version ${escapeHtml(APP_VERSION)} - What's new</button>
     </div>
+  `;
+}
+
+function renderReleaseNotesWindow() {
+  if (!releaseNotesOpen) return "";
+
+  return `
+    <aside class="release-notes-window" role="dialog" aria-label="Latest app updates">
+      <div class="release-notes-heading">
+        <div>
+          <p>Latest update</p>
+          <h2>Version ${escapeHtml(APP_VERSION)}</h2>
+        </div>
+        <button class="release-notes-close" type="button" data-action="close-release-notes" aria-label="Close update window">X</button>
+      </div>
+      <ul class="release-notes-list">
+        <li><strong>0012:</strong> Added this closable update window and a quick way to reopen it.</li>
+        <li><strong>0011:</strong> Shortened pre-filled text to make Microsoft Forms links more reliable.</li>
+        <li><strong>0010:</strong> Added more UCH children&apos;s and EGA clinical areas.</li>
+      </ul>
+    </aside>
   `;
 }
 
@@ -4565,6 +4589,12 @@ app.addEventListener("click", (event) => {
   const action = target.dataset.action;
   if (action === "toggle-theme") {
     toggleThemePreference();
+  }
+  if (action === "open-release-notes") {
+    releaseNotesOpen = true;
+  }
+  if (action === "close-release-notes") {
+    releaseNotesOpen = false;
   }
   if (action === "set-mrn-add-later") {
     state.patient.mrn = "Add later";
