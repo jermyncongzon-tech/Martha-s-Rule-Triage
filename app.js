@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0013";
+const APP_VERSION = "20260723-0014";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -859,9 +859,9 @@ function renderReleaseNotesWindow() {
         <button class="release-notes-close" type="button" data-action="close-release-notes" aria-label="Close update window">X</button>
       </div>
       <ul class="release-notes-list">
+        <li><strong>0014:</strong> Added clear check and X markers for required patient-review fields.</li>
         <li><strong>0013:</strong> Added Home as a separate pathway that skips triage.</li>
         <li><strong>0012:</strong> Added this closable update window and a quick way to reopen it.</li>
-        <li><strong>0011:</strong> Shortened pre-filled text to make Microsoft Forms links more reliable.</li>
       </ul>
     </aside>
   `;
@@ -1031,9 +1031,9 @@ function renderVisitLogClinicalAssessmentSection() {
           <h4>Patient identifiers</h4>
           <div class="visit-log-card-grid">
             ${field("6-digit code", "visitLog.clinicalAssessment.caseCode", "text", "ABC123", "text", 6)}
-            ${field("MRN number", "patient.mrn")}
+            ${requiredVisitLogField("MRN number", "patient.mrn")}
             <label class="field">
-              <span>Ethnic group <strong aria-hidden="true">*</strong></span>
+              ${visitLogRequiredFieldLabel("Ethnic group", Boolean(state.patient.ethnicGroup))}
               <select data-bind="patient.ethnicGroup" required aria-required="true">
                 <option value="">Select ethnic group</option>
                 ${ethnicGroupOptions.map(([optionValue, optionLabel]) => `
@@ -1050,15 +1050,15 @@ function renderVisitLogClinicalAssessmentSection() {
             ${selectField("Ward / Area", "visitLog.location.wardArea", wardAreaOptions, "Select ward / area")}
             ${state.visitLog.location.wardArea === "Other" ? field("Other ward / area (max. 50 characters)", "visitLog.location.wardAreaOther", "text", "Enter ward / area", "", OTHER_WARD_AREA_CHARACTER_LIMIT) : ""}
             ${field("Bed number", "visitLog.location.bedNumber")}
-            ${field("Date of visit", "visitLog.dateOfVisit", "date")}
+            ${requiredVisitLogField("Date of visit", "visitLog.dateOfVisit", "date")}
             ${field("Time of PERRT/Outreach attendance", "visitLog.timeOfAttendance", "time", "Optional")}
           </div>
         </section>
         <section class="visit-log-info-card visit-log-notes-card">
           <h4>Assessment and notes</h4>
           <div class="visit-log-card-grid">
-            ${newsScoreField("NEWS2 score at time of call", "visitLog.clinicalAssessment.news2AtCall")}
-            ${newsScoreField("NEWS2 score at time of attendance", "visitLog.clinicalAssessment.news2AtAttendance")}
+            ${newsScoreField("NEWS2 score at time of call", "visitLog.clinicalAssessment.news2AtCall", true)}
+            ${newsScoreField("NEWS2 score at time of attendance", "visitLog.clinicalAssessment.news2AtAttendance", true)}
             ${textarea("Additional clinical notes", "visitLog.clinicalAssessment.additionalClinicalNotes", "", "large", REVIEW_NOTES_LIMIT)}
           </div>
         </section>
@@ -2367,6 +2367,39 @@ function renderSectionCompletionBadge(complete) {
   `;
 }
 
+function visitLogRequiredFieldLabel(label, complete) {
+  const statusLabel = complete ? "Complete" : "Required";
+  return `
+    <span class="visit-log-field-label">
+      <span>${escapeHtml(label)} <strong aria-hidden="true">*</strong></span>
+      <span class="visit-log-field-status ${complete ? "complete" : "incomplete"}" role="img" aria-label="${statusLabel}">${complete ? "✓" : "X"}</span>
+    </span>
+  `;
+}
+
+function requiredVisitLogField(label, path, type = "text", placeholder = "") {
+  const value = getPath(path) || "";
+  return `
+    <label class="field visit-log-required-field ${value ? "complete" : "incomplete"}">
+      ${visitLogRequiredFieldLabel(label, Boolean(value))}
+      <input type="${type}" data-bind="${path}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" required aria-required="true" />
+    </label>
+  `;
+}
+
+function updateVisitLogRequiredFieldStatus(target, complete) {
+  const field = target.closest(".visit-log-required-field");
+  if (!field) return;
+  field.classList.toggle("complete", complete);
+  field.classList.toggle("incomplete", !complete);
+  const status = field.querySelector(".visit-log-field-status");
+  if (!status) return;
+  status.classList.toggle("complete", complete);
+  status.classList.toggle("incomplete", !complete);
+  status.textContent = complete ? "✓" : "X";
+  status.setAttribute("aria-label", complete ? "Complete" : "Required");
+}
+
 function field(label, path, type = "text", placeholder = "", inputmode = "", maxlength = "") {
   return `
     <label class="field">
@@ -2376,14 +2409,14 @@ function field(label, path, type = "text", placeholder = "", inputmode = "", max
   `;
 }
 
-function newsScoreField(label, path) {
+function newsScoreField(label, path, required = false) {
   const value = getPath(path) || "";
   const notAvailable = value === "N/A";
   return `
-    <label class="field news-score-field">
-      <span>${escapeHtml(label)}</span>
+    <label class="field news-score-field ${required ? "visit-log-required-field" : ""} ${value ? "complete" : "incomplete"}">
+      ${required ? visitLogRequiredFieldLabel(label, Boolean(value)) : `<span>${escapeHtml(label)}</span>`}
       <div class="news-score-input-row">
-        <input type="number" min="0" data-bind="${escapeHtml(path)}" value="${escapeHtml(notAvailable ? "" : value)}" placeholder="Enter NEWS2 score" ${notAvailable ? "disabled" : ""} />
+        <input type="number" min="0" data-bind="${escapeHtml(path)}" value="${escapeHtml(notAvailable ? "" : value)}" placeholder="Enter NEWS2 score" ${notAvailable ? "disabled" : ""} ${required ? "required aria-required=\"true\"" : ""} />
         <button class="btn secondary news-score-na" type="button" data-action="toggle-news-score-na" data-path="${escapeHtml(path)}" aria-pressed="${notAvailable ? "true" : "false"}">${notAvailable ? "N/A selected" : "N/A"}</button>
       </div>
     </label>
@@ -4510,6 +4543,7 @@ app.addEventListener("input", (event) => {
       : target.value;
   if (value !== target.value) target.value = value;
   setPath(path, value);
+  updateVisitLogRequiredFieldStatus(target, Boolean(value));
   if (target.tagName === "TEXTAREA") {
     const counter = target.closest(".textarea-wrap")?.querySelector(".char-counter");
     if (counter) counter.textContent = `${target.value.length}/${target.maxLength}`;

@@ -2168,6 +2168,45 @@ textarea:focus {
   color: #15803d;
 }
 
+.visit-log-field-label {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.visit-log-field-status {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 950;
+  height: 22px;
+  justify-content: center;
+  line-height: 1;
+  width: 22px;
+}
+
+.visit-log-field-status.incomplete {
+  background: #fff1f2;
+  border: 1px solid #fda4af;
+  color: #be123c;
+}
+
+.visit-log-field-status.complete {
+  animation: visit-log-badge-pop 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  color: #15803d;
+}
+
+.visit-log-required-field.incomplete input,
+.visit-log-required-field.incomplete select {
+  border-color: #fda4af;
+}
+
 .visit-log-section-cards {
   display: grid;
   gap: 14px;
