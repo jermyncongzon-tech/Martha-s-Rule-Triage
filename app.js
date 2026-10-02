@@ -972,7 +972,10 @@ function isVisitLogStepComplete(stepId) {
     return Boolean(
       state.patient.mrn &&
       state.patient.ethnicGroup &&
+      state.patient.learningDisabilityNeurodiversity &&
+      visit.location.bedNumber &&
       visit.dateOfVisit &&
+      visit.timeOfAttendance &&
       visit.clinicalAssessment.news2AtCall &&
       visit.clinicalAssessment.news2AtAttendance
     );
@@ -1032,7 +1035,7 @@ function renderVisitLogClinicalAssessmentSection() {
           <div class="visit-log-card-grid">
             ${field("6-digit code", "visitLog.clinicalAssessment.caseCode", "text", "ABC123", "text", 6)}
             ${requiredVisitLogField("MRN number", "patient.mrn")}
-            <label class="field">
+            <label class="field visit-log-required-field ${state.patient.ethnicGroup ? "complete" : "incomplete"}">
               ${visitLogRequiredFieldLabel("Ethnic group", Boolean(state.patient.ethnicGroup))}
               <select data-bind="patient.ethnicGroup" required aria-required="true">
                 <option value="">Select ethnic group</option>
@@ -1041,7 +1044,7 @@ function renderVisitLogClinicalAssessmentSection() {
                 `).join("")}
               </select>
             </label>
-            ${radioGroup("Learning Disability or Neurodiversity", "patient.learningDisabilityNeurodiversity", [["yes", "Yes"], ["no", "No"], ["not_known", "Not known"]])}
+            ${requiredVisitLogRadioGroup("Learning Disability or Neurodiversity", "patient.learningDisabilityNeurodiversity", [["yes", "Yes"], ["no", "No"], ["not_known", "Not known"]])}
           </div>
         </section>
         <section class="visit-log-info-card">
@@ -1049,9 +1052,9 @@ function renderVisitLogClinicalAssessmentSection() {
           <div class="visit-log-card-grid">
             ${selectField("Ward / Area", "visitLog.location.wardArea", wardAreaOptions, "Select ward / area")}
             ${state.visitLog.location.wardArea === "Other" ? field("Other ward / area (max. 50 characters)", "visitLog.location.wardAreaOther", "text", "Enter ward / area", "", OTHER_WARD_AREA_CHARACTER_LIMIT) : ""}
-            ${field("Bed number", "visitLog.location.bedNumber")}
-            ${requiredVisitLogField("Date of visit", "visitLog.dateOfVisit", "date")}
-            ${field("Time of PERRT/Outreach attendance", "visitLog.timeOfAttendance", "time", "Optional")}
+            ${requiredVisitLogNAField("Bed number", "visitLog.location.bedNumber")}
+            ${requiredVisitLogNAField("Date of visit", "visitLog.dateOfVisit", "date")}
+            ${requiredVisitLogNAField("Time of PERRT/Outreach attendance", "visitLog.timeOfAttendance", "time")}
           </div>
         </section>
         <section class="visit-log-info-card visit-log-notes-card">
@@ -2384,6 +2387,37 @@ function requiredVisitLogField(label, path, type = "text", placeholder = "") {
       ${visitLogRequiredFieldLabel(label, Boolean(value))}
       <input type="${type}" data-bind="${path}" value="${escapeHtml(value)}" placeholder="${escapeHtml(placeholder)}" required aria-required="true" />
     </label>
+  `;
+}
+
+function requiredVisitLogNAField(label, path, type = "text", placeholder = "") {
+  const value = getPath(path) || "";
+  const notAvailable = value === "N/A";
+  return `
+    <label class="field visit-log-required-field ${value ? "complete" : "incomplete"}">
+      ${visitLogRequiredFieldLabel(label, Boolean(value))}
+      <div class="na-input-row">
+        <input type="${type}" data-bind="${path}" value="${escapeHtml(notAvailable ? "" : value)}" placeholder="${escapeHtml(placeholder)}" ${notAvailable ? "disabled" : ""} required aria-required="true" />
+        <button class="btn secondary na-field-button" type="button" data-action="toggle-na-field" data-path="${escapeHtml(path)}" aria-pressed="${notAvailable ? "true" : "false"}">${notAvailable ? "N/A selected" : "N/A"}</button>
+      </div>
+    </label>
+  `;
+}
+
+function requiredVisitLogRadioGroup(label, path, options) {
+  const value = getPath(path) || "";
+  return `
+    <fieldset class="choice-group visit-log-required-choice ${value ? "complete" : "incomplete"}">
+      <legend>${visitLogRequiredFieldLabel(label, Boolean(value))}</legend>
+      <div class="choices">
+        ${options.map(([optionValue, optionLabel]) => `
+          <label class="choice">
+            <input type="radio" name="${path}" data-bind="${path}" value="${escapeHtml(optionValue)}" ${value === optionValue ? "checked" : ""} required aria-required="true" />
+            <span>${escapeHtml(optionLabel)}</span>
+          </label>
+        `).join("")}
+      </div>
+    </fieldset>
   `;
 }
 
@@ -4683,6 +4717,10 @@ app.addEventListener("click", (event) => {
     state.patient.mrn = "Add later";
   }
   if (action === "toggle-news-score-na") {
+    const path = target.dataset.path || "";
+    setPath(path, getPath(path) === "N/A" ? "" : "N/A");
+  }
+  if (action === "toggle-na-field") {
     const path = target.dataset.path || "";
     setPath(path, getPath(path) === "N/A" ? "" : "N/A");
   }

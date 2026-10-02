@@ -2207,6 +2207,18 @@ textarea:focus {
   border-color: #fda4af;
 }
 
+.visit-log-required-choice.incomplete .choices {
+  border: 1px solid #fda4af;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.visit-log-required-choice.complete .choices {
+  border: 1px solid #86efac;
+  border-radius: 10px;
+  padding: 8px;
+}
+
 .visit-log-section-cards {
   display: grid;
   gap: 14px;
@@ -2871,22 +2883,26 @@ textarea:focus {
   border-color: #ffffff;
 }
 
-.news-score-input-row {
+.news-score-input-row,
+.na-input-row {
   align-items: center;
   display: flex;
   gap: 10px;
 }
 
-.news-score-input-row input {
+.news-score-input-row input,
+.na-input-row input {
   min-width: 0;
 }
 
-.news-score-na {
+.news-score-na,
+.na-field-button {
   flex: 0 0 auto;
   min-width: 78px;
 }
 
-.news-score-na[aria-pressed="true"] {
+.news-score-na[aria-pressed="true"],
+.na-field-button[aria-pressed="true"] {
   background: #e86a10;
   border-color: #e86a10;
   color: #ffffff;
