@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0012";
+const APP_VERSION = "20260723-0013";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -24,6 +24,8 @@ const REVIEW_NOTES_LIMIT = 400;
 const TRIAGE_CALLER_SUMMARY_LIMIT = 250;
 const OTHER_WARNING_SIGN_CHARACTER_LIMIT = 50;
 const OTHER_WARD_AREA_CHARACTER_LIMIT = 50;
+const HOME_TRIAGE_NOTE = "Home triage not needed - patient is from home";
+const HOME_PATHWAY_CONCERN_VALUE = "Other";
 const defaultNoticeRecipientEmails = ["jillian.hartin@nhs.net", "passang.pangri@nhs.net", "uclh.PERRTband8@nhs.net"];
 const noticeRecipientOptions = [
   ["jermyn.congzon@nhs.net", "Jermyn Congzon", "Interface developer", "", "tech"],
@@ -516,6 +518,7 @@ const wardAreaSuggestions = [
   "NHNN NMCC",
   "NHNN Bloomsbury Ward",
   "NHNN Rehab",
+  "Home",
   "Test",
   "Other",
 ];
@@ -711,7 +714,11 @@ function isRepeatOnlyMode() {
 }
 
 function getSteps() {
-  return triageSteps;
+  return isHomePathway() ? triageSteps.filter((step) => step.id !== "triage") : triageSteps;
+}
+
+function isHomePathway() {
+  return activeTab === "triage" && state.location.wardArea === "Home";
 }
 
 function normalizeCurrentStep() {
@@ -852,9 +859,9 @@ function renderReleaseNotesWindow() {
         <button class="release-notes-close" type="button" data-action="close-release-notes" aria-label="Close update window">X</button>
       </div>
       <ul class="release-notes-list">
+        <li><strong>0013:</strong> Added Home as a separate pathway that skips triage.</li>
         <li><strong>0012:</strong> Added this closable update window and a quick way to reopen it.</li>
         <li><strong>0011:</strong> Shortened pre-filled text to make Microsoft Forms links more reliable.</li>
-        <li><strong>0010:</strong> Added more UCH children&apos;s and EGA clinical areas.</li>
       </ul>
     </aside>
   `;
@@ -1859,8 +1866,9 @@ function renderLocationSection() {
     <div class="field-grid">
       ${selectField("Ward / Area", "location.wardArea", wardAreaOptions, "Select ward / area")}
       ${state.location.wardArea === "Other" ? field("Other ward / area (max. 50 characters)", "location.wardAreaOther", "text", "Enter ward / area", "", OTHER_WARD_AREA_CHARACTER_LIMIT) : ""}
-      ${field("Bed number", "location.bedNumber")}
-      ${selectField("Specialty / Medical team", "location.specialtyMedicalTeam", specialtyOptions, "Select specialty / team")}
+      ${isHomePathway() ? "" : field("Bed number", "location.bedNumber")}
+      ${isHomePathway() ? "" : selectField("Specialty / Medical team", "location.specialtyMedicalTeam", specialtyOptions, "Select specialty / team")}
+      ${isHomePathway() ? `<div class="notice wide"><strong>Home pathway:</strong> triage is not needed. The call will be recorded as U5, with the caller summary as the key clinical information.</div>` : ""}
     </div>
   `;
 }
@@ -1876,7 +1884,7 @@ function renderTriageRouteActionSection() {
       <p class="route-route">Urgency code: ${escapeHtml(categoryDisplayLabel(urgency))}</p>
       <p class="route-route">${escapeHtml(triageOutcomeMessage(urgency))}</p>
       <p>${escapeHtml(triageNextStepMessage(urgency))}</p>
-      <div class="route-reminder">Please ensure the respective ward is informed before you complete the notice.</div>
+      <div class="route-reminder">${isHomePathway() ? "Please ensure the appropriate service is informed before you complete the notice." : "Please ensure the respective ward is informed before you complete the notice."}</div>
       <div class="route-actions">
         <div class="route-action-stack">
           <button class="btn secondary notify-form-button ${isReadyForPrefilledForm() && !noticeOpenedForCurrentActivity ? "ready-form" : ""}" type="button" data-action="open-ms-form" ${isReadyForPrefilledForm() && !noticeOpenedForCurrentActivity ? "" : "disabled"}>
@@ -1951,6 +1959,7 @@ function renderRepeatSummaryPanel() {
 }
 
 function currentLiveTriageNode() {
+  if (isHomePathway()) return "U5_unclear_or_insufficient_info";
   const triage = state.triage;
   const redFlags = triage.redFlags || [];
   const hasWarningSigns = hasSelectedWarningSigns(triage);
@@ -2558,6 +2567,7 @@ function mentalHealthConcernLabel() {
 }
 
 function calculateUrgency() {
+  if (isHomePathway()) return "U5_unclear_or_insufficient_info";
   return calculateUrgencyFromCategory(state.triage);
 }
 
@@ -2599,6 +2609,7 @@ function activeFormCategory() {
 }
 
 function activeFormUrgency() {
+  if (isHomePathway()) return "U5_unclear_or_insufficient_info";
   return calculateUrgencyFromCategory(activeFormCategory());
 }
 
@@ -2619,7 +2630,7 @@ function categoryDisplayLabel(urgency = calculateUrgency()) {
   if (urgency === "U2_same_day_clinical") return "U2 - Urgent clinical";
   if (urgency === "U3_routine_clinical") return "U3 - Routine clinical";
   if (urgency === "U4_service_or_admin") return "U4 - Service or admin";
-  return "U5 - Unclear or insufficient information";
+  return isHomePathway() ? "U5 - Home call (triage not needed)" : "U5 - Unclear or insufficient information";
 }
 
 function microsoftFormTriageCategoryLabel(urgency = activeFormUrgency()) {
@@ -2644,22 +2655,33 @@ function repeatSecondaryConcernFormValue() {
 }
 
 function primaryConcernFormValueForCategory(category = activeFormCategory()) {
+  if (isHomePathway()) return HOME_PATHWAY_CONCERN_VALUE;
   return coreConcernLabels[category.coreConcern] || "";
 }
 
 function secondaryConcernFormValueForCategory(category = activeFormCategory()) {
+  if (isHomePathway()) return HOME_PATHWAY_CONCERN_VALUE;
   return secondaryFormValue(category);
 }
 
 function secondaryConcernMicrosoftFormValueForCategory(category = activeFormCategory()) {
+  if (isHomePathway()) return HOME_PATHWAY_CONCERN_VALUE;
   return secondaryMicrosoftFormValue(category);
 }
 
 function coreConcernMappedFormValueForCategory(category = activeFormCategory()) {
+  if (isHomePathway()) return HOME_PATHWAY_CONCERN_VALUE;
   return primaryConcernFormValueForCategory(category);
 }
 
 function triageActionDetail(urgency = calculateUrgency()) {
+  if (isHomePathway()) {
+    return {
+      instruction: "This is a Home pathway call. Triage is not needed; review the caller summary and arrange the appropriate follow-up before completing the documentation.",
+      phoneNumber: "",
+      callLabel: "",
+    };
+  }
   if (urgency === "U1_immediate_emergency") {
     return {
       instruction: "This needs to be seen by PERRT/Outreach. Recommended action: Notify PERRT/Outreach local to the concern, hand over the call details, then complete the documentation.",
@@ -2704,12 +2726,14 @@ function triageReviewRequiredLabel(urgency = currentRouteUrgency()) {
 }
 
 function triageOutcomeMessage(urgency = currentRouteUrgency()) {
+  if (isHomePathway()) return "Home pathway: triage is not needed and PERRT review is not required.";
   return triageNeedsPerrtReview(urgency)
     ? "From your triage, this call should be reviewed by PERRT."
     : "";
 }
 
 function triageNextStepMessage(urgency = currentRouteUrgency()) {
+  if (isHomePathway()) return "Review the caller summary and arrange the appropriate follow-up before clicking Send Notice to Teams.";
   return triageNeedsPerrtReview(urgency)
     ? "You may now contact the respective ward and click Send Notice to Teams. Please ensure you select the PERRT recipient for the review of the patient."
     : "You may now contact the respective ward and click Send Notice to Teams for local follow-up.";
@@ -2732,7 +2756,7 @@ function calculateCompleteness() {
       { label: "Patient MRN entered", done: Boolean(state.patient.mrn) },
       { label: "Patient date of birth entered", done: Boolean(state.patient.dob) },
       { label: "Ward / area entered", done: wardAreaComplete(state.location.wardArea, state.location.wardAreaOther) },
-      { label: "Repeat-call triage completed", done: triageCategoryIsComplete(state.triage) },
+      { label: "Repeat-call triage completed", done: isHomePathway() || triageCategoryIsComplete(state.triage) },
       { label: "Caller concern summary entered", done: Boolean(state.concernSummary.concernsSummary) },
       { label: "Mental health concern answered", done: Boolean(state.concernSummary.mentalHealthConcern) },
     ];
@@ -2742,7 +2766,7 @@ function calculateCompleteness() {
     { label: "Call date and phone answer time", done: Boolean(state.callDetails.dateOfReferral && state.callDetails.timePhoneAnswered) },
     { label: "Repeat-call branch answered", done: Boolean(state.callDetails.repeatCall) },
     { label: "Caller type recorded", done: Boolean(state.caller.callerType) },
-    { label: "Triage questions completed", done: triageCategoryIsComplete(state.triage) },
+    { label: "Triage questions completed", done: isHomePathway() || triageCategoryIsComplete(state.triage) },
     { label: "Caller concern summary entered", done: Boolean(state.concernSummary.concernsSummary) },
     { label: "Mental health concern answered", done: Boolean(state.concernSummary.mentalHealthConcern) },
     { label: "Patient MRN entered", done: Boolean(state.patient.mrn) },
@@ -2770,6 +2794,7 @@ function currentVisitLogCategoryMissingFields() {
 }
 
 function triageCategoryMissingFields(category) {
+  if (isHomePathway()) return [];
   const missing = [];
   const redFlagsRequired = shouldAskRedFlags(category);
   const redFlagsAnswered = !redFlagsRequired || warningSignsAreComplete(category);
@@ -3033,6 +3058,7 @@ function otherWardRecipientEmailMissing() {
 }
 
 function noticeRecipientFormValue() {
+  if (isHomePathway()) return "";
   const selected = state.triage.noticeRecipients || [];
   return combineEmailRecipients(selected);
 }
@@ -3068,6 +3094,7 @@ function learningStatusLabel() {
 
 function sameDayReviewFormLabel(category = activeFormCategory()) {
   // This is a Microsoft Forms choice field, so automatic routes must use its exact option.
+  if (isHomePathway()) return "No";
   if (hasSelectedWarningSigns(category) || shouldAutoRouteToPerrt(category)) return "Yes";
   if (!category.sameDayReview) return "";
   if (category.sameDayReview === "yes") return "Yes";
@@ -3081,6 +3108,7 @@ function callerTypeFormLabel() {
 }
 
 function warningSignsFormDetail(category = activeFormCategory()) {
+  if (isHomePathway()) return HOME_TRIAGE_NOTE;
   const warningSigns = (category.redFlags || []).filter((item) => item !== "none");
   if (!warningSigns.length) return "None";
   const labels = warningSigns.map((value) => {
@@ -3092,6 +3120,7 @@ function warningSignsFormDetail(category = activeFormCategory()) {
 }
 
 function warningSignsMicrosoftFormValue(category = activeFormCategory()) {
+  if (isHomePathway()) return HOME_TRIAGE_NOTE;
   if (!shouldAskRedFlags(category)) return "Not applicable - non-acute deterioration";
   if (!warningSignsAreComplete(category)) return "";
   if (!hasSelectedWarningSigns(category)) return "No warning signs selected";
@@ -3103,14 +3132,20 @@ function triageAdditionalInformationFormValue(category = activeFormCategory()) {
 }
 
 function categoryOfCallLabel(category = activeFormCategory()) {
+  if (isHomePathway()) return HOME_TRIAGE_NOTE;
   const isAcute = category.acuteDeterioration === "yes" || category.acuteDeterioration === "unsure" || hasSelectedWarningSigns(category);
   if (!isAcute) return "Non-Acute Deterioration";
   return `Acute Deterioration; Warning signs=${warningSignsFormDetail(category)}`;
 }
 
 function acuteNonAcuteFormValue(category = activeFormCategory()) {
+  if (isHomePathway()) return "Non-Acute Deterioration";
   const isAcute = category.acuteDeterioration === "yes" || category.acuteDeterioration === "unsure" || hasSelectedWarningSigns(category);
   return isAcute ? "Acute Deterioration" : "Non-Acute Deterioration";
+}
+
+function acuteDeteriorationQuestionFormValue(category = activeFormCategory()) {
+  return isHomePathway() ? "Home" : acuteNonAcuteFormValue(category);
 }
 
 function shouldShowWarningSignDetails(category = activeFormCategory()) {
@@ -3143,6 +3178,7 @@ function coreConcernFormLabel(category = activeFormCategory()) {
 }
 
 function nhseNonAcuteCategoryFormValue(category = activeFormCategory()) {
+  if (isHomePathway()) return HOME_PATHWAY_CONCERN_VALUE;
   const core = category.coreConcern;
   const secondaryFactors = category.secondaryFactors || [];
   const communicationFactors = [
@@ -3238,15 +3274,15 @@ function buildMicrosoftFormUrl() {
     ["r66cf613485964d4383c8aa51890fcf75", quotedIfPresent(state.location.wardArea)],
     ["r3926d94057ed4eb692e68975f7cc60d0", rawValue(state.location.wardArea === "Other" ? state.location.wardAreaOther : "")],
     ["rc9b9ef7e4d044b2e9586f9a4918e16f3", rawValue(triageAdditionalNoticeRecipientValue())],
-    ["r5242c93b6153469a955a18eef845b123", rawValue(state.location.bedNumber)],
-    ["rd5eb8fd12c3b4820a98be63071b7aa45", quotedIfPresent(state.location.specialtyMedicalTeam)],
+    ["r5242c93b6153469a955a18eef845b123", rawValue(isHomePathway() ? "" : state.location.bedNumber)],
+    ["rd5eb8fd12c3b4820a98be63071b7aa45", quotedIfPresent(isHomePathway() ? "" : state.location.specialtyMedicalTeam)],
     ["re71f380f7f854a7d89d4b259a20fa59b", quotedIfPresent(callerTypeFormLabel())],
     ["ra65e5273f8334f57bd4353404b4d74d1", quotedIfPresent(acuteNonAcuteFormValue(category))],
     ["ra149b074a6c3473a9b8013202182b297", quotedIfPresent(microsoftFormTriageCategoryLabel(activeFormUrgency()))],
     ["rcebd38d3d563434fb16f86c0316377c6", quotedIfPresent(coreConcernMappedFormValueForCategory(category))],
     ["rff487e35c7034b4199c9e5e05f1a1d9b", rawValue(nhseNonAcuteCategoryFormValue(category))],
     ["r78896ccbec904d53a48753318de935e2", rawValue(noticeRecipientFormValue())],
-    ["r39f66a7d3a6e490ca8cb00c92e987f42", rawValue(acuteNonAcuteFormValue(category))],
+    ["r39f66a7d3a6e490ca8cb00c92e987f42", rawValue(acuteDeteriorationQuestionFormValue(category))],
     [TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD, rawValue(warningSignsMicrosoftFormValue(category))],
     ["r07a6bc2130884fbdab35c6a9771103f6", rawValue(primaryConcernFormValueForCategory(category))],
     ["r2a55ea2436a747179be777730d105534", quotedIfPresent(sameDayReviewFormLabel(category))],
@@ -3283,6 +3319,10 @@ function openPrefilledMicrosoftForm() {
     renderApp();
     return;
   }
+  if (isHomePathway()) {
+    requestMicrosoftFormLaunch();
+    return;
+  }
   if (activeTab !== "visitLog") {
     noticeRecipientBranchState = { uch: false, nhnn: false };
     noticeRecipientModalOpen = true;
@@ -3302,6 +3342,10 @@ function openPrefilledMicrosoftFormWithoutPrompt() {
     otherWardEmailModalOpen = true;
     otherWardEmailOpenFormAfterSave = true;
     renderApp();
+    return;
+  }
+  if (isHomePathway()) {
+    requestMicrosoftFormLaunch();
     return;
   }
   if (activeTab !== "visitLog") {
@@ -4353,8 +4397,13 @@ function applyChangeSideEffects(path, value) {
     }
   }
 
-  if (path === "location.wardArea" && value !== "Other") {
-    state.location.wardAreaOther = "";
+  if (path === "location.wardArea") {
+    if (value !== "Other") state.location.wardAreaOther = "";
+    if (value === "Home") {
+      state.location.bedNumber = "";
+      state.location.specialtyMedicalTeam = "";
+      resetTriageCategory();
+    }
   }
 
   if (path === "repeatCallUpdate.wardArea" && value !== "Other") {
