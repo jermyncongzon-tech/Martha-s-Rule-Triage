@@ -1895,7 +1895,7 @@ function renderTriageRouteActionSection() {
       <div class="route-actions">
         <div class="route-action-stack">
           <button class="btn secondary notify-form-button ${isReadyForPrefilledForm() && !noticeOpenedForCurrentActivity ? "ready-form" : ""}" type="button" data-action="open-ms-form" ${isReadyForPrefilledForm() && !noticeOpenedForCurrentActivity ? "" : "disabled"}>
-            <span>${noticeOpenedForCurrentActivity ? "Notice form opened" : "Send Notice to Teams"}</span>
+            <span>${noticeOpenedForCurrentActivity ? "Notice form opened" : isHomePathway() ? "Send Notice to MR Team and Log Call" : "Send Notice to Teams"}</span>
             <small>${noticeOpenedForCurrentActivity ? "Start a new activity to send another notice" : "Open pre-filled NHS MS Form"}</small>
           </button>
           <button class="btn secondary" type="button" data-action="preview-email">Preview automated email</button>
@@ -2819,6 +2819,17 @@ function urgencyClass(urgency) {
 }
 
 function calculateCompleteness() {
+  if (isHomePathway()) {
+    return [
+      { label: "Call date and phone answer time", done: Boolean(state.callDetails.dateOfReferral && state.callDetails.timePhoneAnswered) },
+      { label: "Repeat-call branch answered", done: Boolean(state.callDetails.repeatCall) },
+      { label: "Home selected as ward / area", done: state.location.wardArea === "Home" },
+      { label: "Caller concern summary entered", done: Boolean(state.concernSummary.concernsSummary) },
+      { label: "Mental health concern answered", done: Boolean(state.concernSummary.mentalHealthConcern) },
+      { label: "Home route generated", done: true },
+    ];
+  }
+
   if (isRepeatOnlyMode()) {
     return [
       { label: "Call date and phone answer time", done: Boolean(state.callDetails.dateOfReferral && state.callDetails.timePhoneAnswered) },
@@ -2848,7 +2859,7 @@ function calculateCompleteness() {
 }
 
 function isReadyForPrefilledForm() {
-  return Boolean(state.patient.dob) && calculateCompleteness().every((item) => item.done);
+  return calculateCompleteness().every((item) => item.done);
 }
 
 function currentTriageMissingFields() {
