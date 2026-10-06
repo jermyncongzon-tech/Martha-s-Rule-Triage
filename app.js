@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20260723-0014";
+const APP_VERSION = "20260723-0015";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -221,8 +221,8 @@ let releaseNotesOpen = true;
 
 const triageSteps = [
   { id: "callDetails", title: "Call Details and Timing", render: renderCallDetailsSection },
-  { id: "patient", title: "Patient Demographic", render: renderPatientSection },
   { id: "location", title: "Location and Clinical Context", render: renderLocationSection },
+  { id: "patient", title: "Patient Demographic", render: renderPatientSection },
   { id: "caller", title: "Caller and Call Context", render: renderCallerSection },
   { id: "concernSummary", title: "Caller Concern Summary", render: renderConcernSummarySection },
   { id: "triage", title: "Triage", render: renderTriageSection },
@@ -714,7 +714,10 @@ function isRepeatOnlyMode() {
 }
 
 function getSteps() {
-  return isHomePathway() ? triageSteps.filter((step) => step.id !== "triage") : triageSteps;
+  if (!isHomePathway()) return triageSteps;
+
+  // Home calls only need the location and caller's summary before next steps.
+  return triageSteps.filter((step) => ["callDetails", "location", "concernSummary", "triageRouteAction"].includes(step.id));
 }
 
 function isHomePathway() {
@@ -859,6 +862,7 @@ function renderReleaseNotesWindow() {
         <button class="release-notes-close" type="button" data-action="close-release-notes" aria-label="Close update window">X</button>
       </div>
       <ul class="release-notes-list">
+        <li><strong>0015:</strong> Home calls now move from location directly to caller concern summary and next steps.</li>
         <li><strong>0014:</strong> Added clear check and X markers for required patient-review fields.</li>
         <li><strong>0013:</strong> Added Home as a separate pathway that skips triage.</li>
         <li><strong>0012:</strong> Added this closable update window and a quick way to reopen it.</li>
