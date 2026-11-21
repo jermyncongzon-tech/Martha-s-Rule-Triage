@@ -863,6 +863,7 @@ function renderReleaseNotesWindow() {
         <button class="release-notes-close" type="button" data-action="close-release-notes" aria-label="Close update window">X</button>
       </div>
       <ul class="release-notes-list">
+        <li><strong>0016:</strong> Added UCH T16 South to the ward list.</li>
         <li><strong>0015:</strong> Home calls now move from location directly to caller concern summary and next steps.</li>
         <li><strong>0014:</strong> Added clear check and X markers for required patient-review fields.</li>
         <li><strong>0013:</strong> Added Home as a separate pathway that skips triage.</li>
