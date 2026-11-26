@@ -2,7 +2,7 @@ const STORAGE_KEY = "marthas-rule-call-triage-log-v1";
 const THEME_STORAGE_KEY = "marthas-rule-theme";
 const TRIAGE_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RUOVQ3TDJFMFZEWllINERCQzNHSlNJNlhLNi4u";
 const VISIT_LOG_MICROSOFT_FORM_BASE = "https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=slTDN7CF9UeyIge0jXdO49GaBrN0vZFAnRn9_VIFc8RURDlSUkpCSEYxUlFETTYyVFBDVVVXMklYNC4u";
-const APP_VERSION = "20261120-0016";
+const APP_VERSION = "20261126-0017";
 const VISIT_LOG_CASE_CODE_QUERY_PARAM = "caseCode";
 const VISIT_LOG_CASE_CODE_MICROSOFT_FORM_FIELD = "r8c81605c8305469ba29b465b9a5d79f1";
 const TRIAGE_WARNING_SIGNS_MICROSOFT_FORM_FIELD = "rf822e736fe4849b584c065f379f79ef6";
@@ -517,6 +517,7 @@ const wardAreaSuggestions = [
   "NHNN JTTU",
   "NHNN DF",
   "NHNN NMCC",
+  "NHNN Hughlings Jackson Ward",
   "NHNN Bloomsbury Ward",
   "NHNN Rehab",
   "Home",
@@ -863,6 +864,7 @@ function renderReleaseNotesWindow() {
         <button class="release-notes-close" type="button" data-action="close-release-notes" aria-label="Close update window">X</button>
       </div>
       <ul class="release-notes-list">
+        <li><strong>0017:</strong> Added NHNN Hughlings Jackson Ward to the ward list.</li>
         <li><strong>0016:</strong> Added UCH T16 South to the ward list.</li>
         <li><strong>0015:</strong> Home calls now move from location directly to caller concern summary and next steps.</li>
         <li><strong>0014:</strong> Added clear check and X markers for required patient-review fields.</li>
